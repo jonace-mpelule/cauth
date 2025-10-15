@@ -1,15 +1,43 @@
 {
   "name": "@cauth/core",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "./dist/index.cjs",             
+  "module": "./dist/index.js",            
+  "types": "./dist/index.d.ts",           
   "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",     
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",    
+        "default": "./dist/index.cjs"     
+      }
+    }
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "scripts": {
+    "build": "tsdown",
+    "patch": "npm version patch", 
+    "minor": "npm version minor",
+    "major": "npm version major", 
+    "publish": "npm publish"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "package.json"
+  ],
+  "keywords": [
+    "authentication",
+    "node-auth",
+    "express auth",
+    "easy-auth"
+  ],
+  "author": "Jonace Mpelule <jonacempelule123@gmail.com> (https://github.com/jonace-mpelule)",
+  "license": "MIT",
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",
@@ -22,5 +50,8 @@
     "libphonenumber-js": "^1.12.23",
     "ms": "^2.1.3",
     "zod": "^4.1.12"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

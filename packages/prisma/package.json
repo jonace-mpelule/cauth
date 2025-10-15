@@ -1,19 +1,52 @@
 {
-  "name": "prisma",
-  "version": "1.0.0",
+  "name": "@cauth/prisma",
+  "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "./dist/index.cjs",             
+  "module": "./dist/index.js",            
+  "types": "./dist/index.d.ts",  
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",     
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",    
+        "default": "./dist/index.cjs"     
+      }
+    }
+  },  
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsdown",
+    "patch": "npm version patch", 
+    "minor": "npm version minor",
+    "major": "npm version major", 
+    "publish": "npm publish"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  
+   "files": [
+    "dist/",
+    "README.md",
+    "package.json"
+  ],
+  "keywords": [
+    "authentication",
+    "node-auth",
+    "express auth",
+    "easy-auth"
+  ],
+    "author": "Jonace Mpelule <jonacempelule123@gmail.com> (https://github.com/jonace-mpelule)",
+  "license": "MIT",
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
     "prisma": "^6.17.0"
   },
   "dependencies": {
     "@prisma/client": "6.11.1"
+  },
+   "engines": {
+    "node": ">=18"
   }
 }
