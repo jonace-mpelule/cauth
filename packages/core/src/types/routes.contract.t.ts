@@ -15,7 +15,13 @@ export type AuthGuardDeps = {
 export interface RoutesContract {
 	Login({ ...config }: RouteDeps): any;
 
+	Register({ ...config }: RouteDeps): any;
+
 	Logout({ ...config }: RouteDeps): any;
 
 	Guard({ ...config }: AuthGuardDeps): any;
+
+	Refresh({ ...config }: AuthGuardDeps): any;
+
+	ChangePassword({ ...config }: RouteDeps & { userId: string }): any;
 }

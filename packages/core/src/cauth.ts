@@ -3,13 +3,7 @@ import { LoginFn } from './fn/login.fn.ts';
 import { LogoutFn } from './fn/logout.fn.ts';
 import { RefreshFn } from './fn/refresh.fn.ts';
 import { RegisterFn } from './fn/register.fn.ts';
-import {
-	GenerateAccessToken,
-	GenerateRefreshToken,
-	GenerateTokenPairs,
-	VerifyAccessToken,
-	VerifyRefreshToken,
-} from './fn/tokens.ts';
+import * as TokenFns from './fn/tokens.ts';
 
 import { type CAuthOptions, CAuthOptionsSchema } from './types/config.t.ts';
 import type {
@@ -53,22 +47,35 @@ export class _CAuth<T extends string[]> {
 		});
 
 	public Routes = {
-		/**
-		 * @description Implements Login Route
-		 */
+		Register: () =>
+			this.#config.routeContractor.Register({
+				config: this.#config,
+				tokens: this.Tokens,
+			}),
+
 		Login: () =>
 			this.#config.routeContractor.Login({
 				config: this.#config,
 				tokens: this.Tokens,
 			}),
 
-		/**
-		 * @description Implements Logout Route
-		 */
 		Logout: () =>
 			this.#config.routeContractor.Logout({
 				config: this.#config,
 				tokens: this.Tokens,
+			}),
+
+		Refresh: () =>
+			this.#config.routeContractor.Refresh({
+				config: this.#config,
+				tokens: this.Tokens,
+			}),
+
+		ChangePassword: (userId: string) =>
+			this.#config.routeContractor.ChangePassword({
+				config: this.#config,
+				tokens: this.Tokens,
+				userId: userId,
 			}),
 	};
 
@@ -91,15 +98,19 @@ export class _CAuth<T extends string[]> {
 
 	public Tokens = {
 		GenerateRefreshToken: (payload: any) =>
-			GenerateRefreshToken({ payload, config: this.#config }),
+			TokenFns.GenerateRefreshToken({ payload, config: this.#config }),
+
 		GenerateAccessToken: (payload: any) =>
-			GenerateAccessToken({ payload, config: this.#config }),
+			TokenFns.GenerateAccessToken({ payload, config: this.#config }),
+
 		GenerateTokenPairs: (payload: any) =>
-			GenerateTokenPairs({ payload, config: this.#config }),
+			TokenFns.GenerateTokenPairs({ payload, config: this.#config }),
+
 		VerifyRefreshToken: <T>(token: any) =>
-			VerifyRefreshToken<T>({ token, config: this.#config }),
+			TokenFns.VerifyRefreshToken<T>({ token, config: this.#config }),
+
 		VerifyAccessToken: <T>(token: any) =>
-			VerifyAccessToken<T>({ token, config: this.#config }),
+			TokenFns.VerifyAccessToken<T>({ token, config: this.#config }),
 	};
 }
 

@@ -6,13 +6,13 @@ import { phoneWithLibSchema } from './phonenumber-schema.t.ts';
 const EmailLogin = z.object({
 	email: z.email(),
 	phoneNumber: z.never(),
-	password: z.string().optional(),
+	password: z.string(),
 });
 
 const PhoneLogin = z.object({
 	phoneNumber: phoneWithLibSchema,
 	email: z.never().optional(),
-	password: z.string().optional(),
+	password: z.string(),
 });
 
 export const LoginSchema = z
