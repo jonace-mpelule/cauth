@@ -2,31 +2,17 @@
   "name": "@cauth/prisma",
   "version": "0.0.1",
   "description": "",
-  "main": "./dist/index.cjs",             
-  "module": "./dist/index.js",            
-  "types": "./dist/index.d.ts",  
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.cts",
   "type": "module",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.ts",     
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",    
-        "default": "./dist/index.cjs"     
-      }
-    }
-  },  
   "scripts": {
     "build": "tsdown",
-    "patch": "npm version patch", 
+    "patch": "npm version patch",
     "minor": "npm version minor",
-    "major": "npm version major", 
+    "major": "npm version major",
     "publish": "npm publish"
   },
-  
-   "files": [
+  "files": [
     "dist/",
     "README.md",
     "package.json"
@@ -37,16 +23,18 @@
     "express auth",
     "easy-auth"
   ],
-    "author": "Jonace Mpelule <jonacempelule123@gmail.com> (https://github.com/jonace-mpelule)",
+  "author": "Jonace Mpelule <jonacempelule123@gmail.com> (https://github.com/jonace-mpelule)",
   "license": "MIT",
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "prisma": "^6.17.0"
   },
   "dependencies": {
-    "@prisma/client": "6.11.1"
+    "@prisma/client": "6.11.1",
+    "bcrypt": "^6.0.0"
   },
-   "engines": {
+  "engines": {
     "node": ">=18"
   }
 }
