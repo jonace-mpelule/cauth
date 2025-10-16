@@ -1,3 +1,4 @@
+import "./express-BgF1jv36.js";
 import * as express0 from "express";
 import z$1, { z } from "zod";
 import ms from "ms";
@@ -324,18 +325,6 @@ declare class ExpressContractor implements RoutesContract {
     tokens,
     roles
   }: AuthGuardDeps) => (req: express0.Request, res: express0.Response, next: express0.NextFunction) => Promise<void | express0.Response<any, Record<string, any>>>;
-}
-//#endregion
-//#region src/types/express.d.ts
-declare global {
-  namespace Express {
-    interface Request {
-      cauth?: {
-        id: string;
-        role: string;
-      };
-    }
-  }
 }
 //#endregion
 export { ExpressContractor };
