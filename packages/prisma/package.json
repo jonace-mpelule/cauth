@@ -2,8 +2,8 @@
   "name": "@cauth/prisma",
   "version": "0.0.1",
   "description": "",
-  "main": "./dist/index.cjs",
-  "types": "./dist/index.d.cts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "type": "module",
   "scripts": {
     "build": "tsdown",
@@ -28,10 +28,10 @@
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
-    "prisma": "^6.17.0"
+    "prisma": "^6.17.1"
   },
   "dependencies": {
-    "@prisma/client": "6.11.1",
+    "@prisma/client": "6.17.1",
     "bcrypt": "^6.0.0"
   },
   "engines": {

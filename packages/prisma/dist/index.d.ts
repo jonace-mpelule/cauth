@@ -318,6 +318,28 @@ declare type AccelerateEngineConfig = {
   tracingHelper: EngineConfig['tracingHelper'];
   accelerateUtils?: AccelerateUtils;
 };
+
+/**
+ * A stripped down interface of `fetch` that `@prisma/extension-accelerate`
+ * relies on. It must be in sync with the corresponding definition in the
+ * Accelerate extension.
+ *
+ * This is the actual interface exposed by the extension. We can't use the
+ * custom fetch function provided by it as normal fetch because the API is
+ * different. Notably, `headers` must be an object and not a `Headers`
+ * instance, and `url` must be a `string` and not a `URL`.
+ *
+ * The return type is `Response` but we can't specify this in an exported type
+ * because it would end up referencing external types from `@types/node` or DOM
+ * which can fail typechecking depending on TypeScript configuration in a user's
+ * project.
+ */
+declare type AccelerateExtensionFetch = (url: string, options: {
+  body?: string;
+  method?: string;
+  headers: Record<string, string>;
+}) => Promise<unknown>;
+declare type AccelerateExtensionFetchDecorator = (fetch: AccelerateExtensionFetch) => AccelerateExtensionFetch;
 declare type AccelerateUtils = EngineConfig['accelerateUtils'];
 declare type Action = keyof typeof DMMF_2.ModelAction | 'executeRaw' | 'queryRaw' | 'runCommandRaw';
 declare type ActiveConnectorType = Exclude<ConnectorType, 'postgres' | 'prisma+postgres'>;
@@ -348,12 +370,13 @@ declare type Args<T, F extends Operation> = T extends {
   };
 } ? T[symbol]['types']['operations'][F]['args'] : any;
 declare type Args_3<T, F extends Operation> = Args<T, F>;
-/**
- * Original `quaint::ValueType` enum tag from Prisma's `quaint`.
- * Query arguments marked with this type are sanitized before being sent to the database.
- * Notice while a query argument may be `null`, `ArgType` is guaranteed to be defined.
- */
-declare type ArgType = 'Int32' | 'Int64' | 'Float' | 'Double' | 'Text' | 'Enum' | 'EnumArray' | 'Bytes' | 'Boolean' | 'Char' | 'Array' | 'Numeric' | 'Json' | 'Xml' | 'Uuid' | 'DateTime' | 'Date' | 'Time' | 'Unknown';
+declare type ArgScalarType = 'string' | 'int' | 'bigint' | 'float' | 'decimal' | 'boolean' | 'enum' | 'uuid' | 'json' | 'datetime' | 'bytes' | 'unknown';
+declare type ArgType = {
+  scalarType: ArgScalarType;
+  dbType?: string;
+  arity: Arity;
+};
+declare type Arity = 'scalar' | 'list';
 
 /**
  * Attributes is a map from string to attribute values.
@@ -381,7 +404,7 @@ declare type BatchArgs = {
 };
 declare type BatchInternalParams = {
   requests: RequestParams[];
-  customDataProxyFetch?: CustomDataProxyFetch;
+  customDataProxyFetch?: AccelerateExtensionFetchDecorator;
 };
 declare type BatchQuery = {
   model: string | undefined;
@@ -463,7 +486,7 @@ declare const ColumnTypeEnum: {
 };
 declare type CompactedBatchResponse = {
   type: 'compacted';
-  plan: {};
+  plan: QueryPlanNode;
   arguments: Record<string, {}>[];
   nestedSelection: string[];
   keys: string[];
@@ -546,36 +569,6 @@ declare type Context_2<T> = T extends {
 };
 declare type Count<O> = { [K in keyof O]: Count<number> } & {};
 declare function createParam(name: string): Param<unknown, string>;
-/**
- * Custom fetch function for `DataProxyEngine`.
- *
- * We can't use the actual type of `globalThis.fetch` because this will result
- * in API Extractor referencing Node.js type definitions in the `.d.ts` bundle
- * for the client runtime. We can only use such types in internal types that
- * don't end up exported anywhere.
-
- * It's also not possible to write a definition of `fetch` that would accept the
- * actual `fetch` function from different environments such as Node.js and
- * Cloudflare Workers (with their extensions to `RequestInit` and `Response`).
- * `fetch` is used in both covariant and contravariant positions in
- * `CustomDataProxyFetch`, making it invariant, so we need the exact same type.
- * Even if we removed the argument and left `fetch` in covariant position only,
- * then for an extension-supplied function to be assignable to `customDataProxyFetch`,
- * the platform-specific (or custom) `fetch` function needs to be assignable
- * to our `fetch` definition. This, in turn, requires the third-party `Response`
- * to be a subtype of our `Response` (which is not a problem, we could declare
- * a minimal `Response` type that only includes what we use) *and* requires the
- * third-party `RequestInit` to be a supertype of our `RequestInit` (i.e. we
- * have to declare all properties any `RequestInit` implementation in existence
- * could possibly have), which is not possible.
- *
- * Since `@prisma/extension-accelerate` redefines the type of
- * `__internalParams.customDataProxyFetch` to its own type anyway (probably for
- * exactly this reason), our definition is never actually used and is completely
- * ignored, so it doesn't matter, and we can just use `unknown` as the type of
- * `fetch` here.
- */
-declare type CustomDataProxyFetch = (fetch: unknown) => unknown;
 declare class DataLoader<T = unknown> {
   private options;
   batches: {
@@ -606,6 +599,18 @@ declare type DatamodelEnum = ReadonlyDeep_2<{
   documentation?: string;
 }>;
 declare function datamodelEnumToSchemaEnum(datamodelEnum: DatamodelEnum): SchemaEnum;
+declare type DataRule = {
+  type: 'rowCountEq';
+  args: number;
+} | {
+  type: 'rowCountNeq';
+  args: number;
+} | {
+  type: 'affectedRowCountEq';
+  args: number;
+} | {
+  type: 'never';
+};
 declare type Datasource$1 = {
   url?: string;
 };
@@ -860,7 +865,7 @@ declare type DefaultSelection<Payload extends OperationPayload, Args = {}, Globa
 }>['default'], ExtractGlobalOmit<GlobalOmitOptions$1, Uncapitalize<Payload['name']>>>;
 declare function defineDmmfProperty(target: object, runtimeDataModel: RuntimeDataModel): void;
 declare function defineExtension(ext: ExtensionArgs | ((client: Client) => Client)): (client: Client) => Client;
-declare const denylist: readonly ["$connect", "$disconnect", "$on", "$transaction", "$use", "$extends"];
+declare const denylist: readonly ["$connect", "$disconnect", "$on", "$transaction", "$extends"];
 declare type Deprecation = ReadonlyDeep_2<{
   sinceVersion: string;
   reason: string;
@@ -904,6 +909,10 @@ declare interface DriverAdapterFactory<Query, Result> extends AdapterInfo {
    */
   connect(): Promise<Queryable<Query, Result$1>>;
 }
+declare type DynamicArgType = ArgType | {
+  arity: 'tuple';
+  elements: ArgType[];
+};
 
 /** Client */
 declare type DynamicClientExtensionArgs<C_, TypeMap extends TypeMapDef, TypeMapCb extends TypeMapCbDef, ExtArgs extends Record<string, any>> = { [P in keyof C_]: unknown } & {
@@ -1130,105 +1139,9 @@ declare interface EnvValue {
   value: null | string;
 }
 declare type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? 1 : 0;
-declare type Error_2 = {
-  kind: 'GenericJs';
-  id: number;
-} | {
-  kind: 'UnsupportedNativeDataType';
-  type: string;
-} | {
-  kind: 'InvalidIsolationLevel';
-  level: string;
-} | {
-  kind: 'LengthMismatch';
-  column?: string;
-} | {
-  kind: 'UniqueConstraintViolation';
-  constraint?: {
-    fields: string[];
-  } | {
-    index: string;
-  } | {
-    foreignKey: {};
-  };
-} | {
-  kind: 'NullConstraintViolation';
-  constraint?: {
-    fields: string[];
-  } | {
-    index: string;
-  } | {
-    foreignKey: {};
-  };
-} | {
-  kind: 'ForeignKeyConstraintViolation';
-  constraint?: {
-    fields: string[];
-  } | {
-    index: string;
-  } | {
-    foreignKey: {};
-  };
-} | {
-  kind: 'DatabaseDoesNotExist';
-  db?: string;
-} | {
-  kind: 'DatabaseAlreadyExists';
-  db?: string;
-} | {
-  kind: 'DatabaseAccessDenied';
-  db?: string;
-} | {
-  kind: 'AuthenticationFailed';
-  user?: string;
-} | {
-  kind: 'TransactionWriteConflict';
-} | {
-  kind: 'TableDoesNotExist';
-  table?: string;
-} | {
-  kind: 'ColumnNotFound';
-  column?: string;
-} | {
-  kind: 'TooManyConnections';
-  cause: string;
-} | {
-  kind: 'ValueOutOfRange';
-  cause: string;
-} | {
-  kind: 'MissingFullTextSearchIndex';
-} | {
-  kind: 'SocketTimeout';
-} | {
-  kind: 'InconsistentColumnData';
-  cause: string;
-} | {
-  kind: 'TransactionAlreadyClosed';
-  cause: string;
-} | {
-  kind: 'postgres';
-  code: string;
-  severity: string;
-  message: string;
-  detail: string | undefined;
-  column: string | undefined;
-  hint: string | undefined;
-} | {
-  kind: 'mysql';
-  code: number;
-  message: string;
-  state: string;
-} | {
-  kind: 'sqlite';
-  /**
-   * Sqlite extended error code: https://www.sqlite.org/rescode.html
-   */
-  extendedCode: number;
-  message: string;
-} | {
-  kind: 'mssql';
-  code: number;
-  message: string;
+declare type Error_2 = MappedError & {
+  originalCode?: string;
+  originalMessage?: string;
 };
 declare type ErrorCapturingFunction<T> = T extends ((...args: infer A) => Promise<infer R>) ? (...args: A) => Promise<Result_4<ErrorCapturingInterface<R>>> : T extends ((...args: infer A) => infer R) ? (...args: A) => Result_4<ErrorCapturingInterface<R>> : T;
 declare type ErrorCapturingInterface<T> = { [K in keyof T]: ErrorCapturingFunction<T[K]> };
@@ -1276,7 +1189,6 @@ declare type ExtendedSpanOptions = SpanOptions & {
   /** The name of the span */
   name: string;
   internal?: boolean;
-  middleware?: boolean;
   /** Whether it propagates context (?=true) */
   active?: boolean;
   /** The context to append the span to */
@@ -1355,9 +1267,31 @@ declare type FieldDefault = ReadonlyDeep_2<{
   args: Array<string | number>;
 }>;
 declare type FieldDefaultScalar = string | boolean | number;
+declare type FieldInitializer = {
+  type: 'value';
+  value: PrismaValue;
+} | {
+  type: 'lastInsertId';
+};
 declare type FieldKind = 'scalar' | 'object' | 'enum' | 'unsupported';
 declare type FieldLocation = 'scalar' | 'inputObjectTypes' | 'outputObjectTypes' | 'enumTypes' | 'fieldRefTypes';
 declare type FieldNamespace = 'model' | 'prisma';
+declare type FieldOperation = {
+  type: 'set';
+  value: PrismaValue;
+} | {
+  type: 'add';
+  value: PrismaValue;
+} | {
+  type: 'subtract';
+  value: PrismaValue;
+} | {
+  type: 'multiply';
+  value: PrismaValue;
+} | {
+  type: 'divide';
+  value: PrismaValue;
+};
 
 /**
  * A reference to a specific field of a specific model
@@ -1365,7 +1299,7 @@ declare type FieldNamespace = 'model' | 'prisma';
 declare interface FieldRef$1<Model, FieldType> {
   readonly modelName: Model$1;
   readonly name: string;
-  readonly typeName: FieldType;
+  readonly typeName: FieldType$1;
   readonly isList: boolean;
 }
 declare type FieldRefAllowType = TypeRef<'scalar' | 'enumTypes'>;
@@ -1374,11 +1308,37 @@ declare type FieldRefType = ReadonlyDeep_2<{
   allowTypes: FieldRefAllowType[];
   fields: SchemaArg[];
 }>;
+declare type FieldScalarType = {
+  type: 'string' | 'int' | 'bigint' | 'float' | 'boolean' | 'json' | 'object' | 'datetime' | 'decimal' | 'unsupported';
+} | {
+  type: 'enum';
+  name: string;
+} | {
+  type: 'bytes';
+  encoding: 'array' | 'base64' | 'hex';
+};
+declare type FieldType$1 = {
+  arity: Arity;
+} & FieldScalarType;
 declare type FluentOperation = 'findUnique' | 'findUniqueOrThrow' | 'findFirst' | 'findFirstOrThrow' | 'create' | 'update' | 'upsert' | 'delete';
 declare interface Fn<Params = unknown, Returns = unknown> {
   params: Params;
   returns: Returns;
 }
+declare type Fragment = {
+  type: 'stringChunk';
+  chunk: string;
+} | {
+  type: 'parameter';
+} | {
+  type: 'parameterTuple';
+} | {
+  type: 'parameterTupleList';
+  itemPrefix: string;
+  itemSeparator: string;
+  itemSuffix: string;
+  groupSeparator: string;
+};
 declare interface GeneratorConfig {
   name: string;
   output: EnvValue | null;
@@ -1444,7 +1404,6 @@ declare function getPrismaClient(config: GetPrismaClientConfig): {
     _clientVersion: string;
     _errorFormat: ErrorFormat$1;
     _tracingHelper: TracingHelper;
-    _middlewares: MiddlewareHandler<QueryMiddleware>;
     _previewFeatures: string[];
     _activeProvider: string;
     _globalOmit?: GlobalOmitOptions$1 | undefined;
@@ -1459,11 +1418,6 @@ declare function getPrismaClient(config: GetPrismaClientConfig): {
      */
     _appliedParent: any;
     _createPrismaPromise: PrismaPromiseFactory;
-    /**
-     * Hook a middleware into the client
-     * @param middleware to hook
-     */
-    $use(middleware: QueryMiddleware): void;
     $on<E extends ExtendedEventType>(eventType: E, callback: EventCallback<E>): any;
     $connect(): Promise<void>;
     /**
@@ -1745,6 +1699,13 @@ declare type IndexField = ReadonlyDeep_2<{
   operatorClass?: string;
 }>;
 declare type IndexType = 'id' | 'normal' | 'unique' | 'fulltext';
+declare type InMemoryOps = {
+  pagination: Pagination | null;
+  distinct: string[] | null;
+  reverse: boolean;
+  linkingFields: string[] | null;
+  nested: Record<string, InMemoryOps>;
+};
 
 /**
  * Matches a JSON array.
@@ -1827,7 +1788,7 @@ declare type InternalRequestParams = {
   /** Used to convert args for middleware and back */
   middlewareArgsMapper?: MiddlewareArgsMapper<unknown, unknown>;
   /** Used for Accelerate client extension via Data Proxy */
-  customDataProxyFetch?: CustomDataProxyFetch;
+  customDataProxyFetch?: AccelerateExtensionFetchDecorator;
 } & Omit<QueryMiddlewareParams, 'runInTransaction'>;
 declare type IsolationLevel = 'READ UNCOMMITTED' | 'READ COMMITTED' | 'REPEATABLE READ' | 'SNAPSHOT' | 'SERIALIZABLE';
 declare type IsolationLevel_2 = 'ReadUncommitted' | 'ReadCommitted' | 'RepeatableRead' | 'Snapshot' | 'Serializable';
@@ -1845,6 +1806,12 @@ declare interface Job {
  * Create a SQL query for a list of values.
  */
 declare function join(values: readonly RawValue[], separator?: string, prefix?: string, suffix?: string): Sql;
+declare type JoinExpression = {
+  child: QueryPlanNode;
+  on: [left: string, right: string][];
+  parentField: string;
+  isRelationUnique: boolean;
+};
 declare type JsArgs = {
   select?: Selection_2;
   include?: Selection_2;
@@ -1991,6 +1958,115 @@ declare type LogLevel$1 = 'info' | 'query' | 'warn' | 'error';
  */
 declare function makeStrictEnum<T extends Record<PropertyKey, string | number>>(definition: T): T;
 declare function makeTypedQueryFactory(sql: string): (...values: any[]) => TypedSql<any[], unknown>;
+declare type MappedError = {
+  kind: 'GenericJs';
+  id: number;
+} | {
+  kind: 'UnsupportedNativeDataType';
+  type: string;
+} | {
+  kind: 'InvalidIsolationLevel';
+  level: string;
+} | {
+  kind: 'LengthMismatch';
+  column?: string;
+} | {
+  kind: 'UniqueConstraintViolation';
+  constraint?: {
+    fields: string[];
+  } | {
+    index: string;
+  } | {
+    foreignKey: {};
+  };
+} | {
+  kind: 'NullConstraintViolation';
+  constraint?: {
+    fields: string[];
+  } | {
+    index: string;
+  } | {
+    foreignKey: {};
+  };
+} | {
+  kind: 'ForeignKeyConstraintViolation';
+  constraint?: {
+    fields: string[];
+  } | {
+    index: string;
+  } | {
+    foreignKey: {};
+  };
+} | {
+  kind: 'DatabaseNotReachable';
+  host?: string;
+  port?: number;
+} | {
+  kind: 'DatabaseDoesNotExist';
+  db?: string;
+} | {
+  kind: 'DatabaseAlreadyExists';
+  db?: string;
+} | {
+  kind: 'DatabaseAccessDenied';
+  db?: string;
+} | {
+  kind: 'ConnectionClosed';
+} | {
+  kind: 'TlsConnectionError';
+  reason: string;
+} | {
+  kind: 'AuthenticationFailed';
+  user?: string;
+} | {
+  kind: 'TransactionWriteConflict';
+} | {
+  kind: 'TableDoesNotExist';
+  table?: string;
+} | {
+  kind: 'ColumnNotFound';
+  column?: string;
+} | {
+  kind: 'TooManyConnections';
+  cause: string;
+} | {
+  kind: 'ValueOutOfRange';
+  cause: string;
+} | {
+  kind: 'MissingFullTextSearchIndex';
+} | {
+  kind: 'SocketTimeout';
+} | {
+  kind: 'InconsistentColumnData';
+  cause: string;
+} | {
+  kind: 'TransactionAlreadyClosed';
+  cause: string;
+} | {
+  kind: 'postgres';
+  code: string;
+  severity: string;
+  message: string;
+  detail: string | undefined;
+  column: string | undefined;
+  hint: string | undefined;
+} | {
+  kind: 'mysql';
+  code: number;
+  message: string;
+  state: string;
+} | {
+  kind: 'sqlite';
+  /**
+   * Sqlite extended error code: https://www.sqlite.org/rescode.html
+   */
+  extendedCode: number;
+  message: string;
+} | {
+  kind: 'mssql';
+  code: number;
+  message: string;
+};
 declare type Mappings = ReadonlyDeep_2<{
   modelOperations: ModelMapping[];
   otherOperations: {
@@ -2078,13 +2154,6 @@ declare type MiddlewareArgsMapper<RequestArgs, MiddlewareArgs> = {
   requestArgsToMiddlewareArgs(requestArgs: RequestArgs): MiddlewareArgs;
   middlewareArgsToRequestArgs(middlewareArgs: MiddlewareArgs): RequestArgs;
 };
-declare class MiddlewareHandler<M extends Function> {
-  private _middlewares;
-  use(middleware: M): void;
-  get(id: number): M | undefined;
-  has(id: number): boolean;
-  length(): number;
-}
 declare type Model$1 = ReadonlyDeep_2<{
   name: string;
   dbName: string | null;
@@ -2155,7 +2224,7 @@ declare type ModelQueryOptionsCbArgs = {
 };
 declare type MultiBatchResponse = {
   type: 'multi';
-  plans: object[];
+  plans: QueryPlanNode[];
 };
 declare type NameArgs = {
   name?: string;
@@ -2232,6 +2301,11 @@ declare type OutputType = ReadonlyDeep_2<{
   fields: SchemaField[];
 }>;
 declare type OutputTypeRef = TypeRef<'scalar' | 'outputObjectTypes' | 'enumTypes'>;
+declare type Pagination = {
+  cursor: Record<string, PrismaValue> | null;
+  take: number | null;
+  skip: number | null;
+};
 declare function Param<$Type, $Value extends string>(name: $Value): Param<$Type, $Value>;
 declare type Param<out $Type, $Value extends string> = {
   readonly name: $Value;
@@ -2247,6 +2321,10 @@ declare type Payload<T, F extends Operation = never> = T extends {
 } ? T[symbol]['types']['payload'] : any;
 declare type PayloadToResult<P, O extends Record_2<any, any> = RenameAndNestPayloadKeys<P>> = { [K in keyof O]?: O[K][K] extends any[] ? PayloadToResult<O[K][K][number]>[] : O[K][K] extends object ? PayloadToResult<O[K][K]> : O[K][K] };
 declare type Pick_2<T, K extends string | number | symbol> = { [P in keyof T as P extends K ? P : never]: T[P] };
+declare interface PlaceholderFormat {
+  prefix: string;
+  hasNumbering: boolean;
+}
 declare type PrimaryKey = ReadonlyDeep_2<{
   name: string | null;
   fields: string[];
@@ -2418,6 +2496,21 @@ declare type PrismaPromiseInteractiveTransaction<PayloadType = unknown> = {
   payload: PayloadType;
 };
 declare type PrismaPromiseTransaction<PayloadType = unknown> = PrismaPromiseBatchTransaction | PrismaPromiseInteractiveTransaction<PayloadType>;
+declare type PrismaValue = string | boolean | number | PrismaValue[] | null | Record<string, unknown> | PrismaValuePlaceholder | PrismaValueGenerator;
+declare type PrismaValueGenerator = {
+  prisma__type: 'generatorCall';
+  prisma__value: {
+    name: string;
+    args: PrismaValue[];
+  };
+};
+declare type PrismaValuePlaceholder = {
+  prisma__type: 'param';
+  prisma__value: {
+    name: string;
+    type: string;
+  };
+};
 declare const PrivateResultType: unique symbol;
 declare type Provider = 'mysql' | 'postgres' | 'sqlite' | 'sqlserver';
 declare namespace Public {
@@ -2513,7 +2606,6 @@ declare type QueryEvent = {
 };
 declare type QueryEventType = 'query';
 declare type QueryIntrospectionBuiltinType = 'int' | 'bigint' | 'float' | 'double' | 'string' | 'enum' | 'bytes' | 'bool' | 'char' | 'decimal' | 'json' | 'xml' | 'uuid' | 'datetime' | 'date' | 'time' | 'int-array' | 'bigint-array' | 'float-array' | 'double-array' | 'string-array' | 'char-array' | 'bytes-array' | 'bool-array' | 'decimal-array' | 'json-array' | 'xml-array' | 'uuid-array' | 'datetime-array' | 'date-array' | 'time-array' | 'null' | 'unknown';
-declare type QueryMiddleware = (params: QueryMiddlewareParams, next: (params: QueryMiddlewareParams) => Promise<unknown>) => Promise<unknown>;
 declare type QueryMiddlewareParams = {
   /** The model this is executed on */
   model?: string;
@@ -2540,6 +2632,130 @@ declare type QueryOutput = ReadonlyDeep_2<{
   isRequired: boolean;
   isList: boolean;
 }>;
+declare type QueryPlanBinding = {
+  name: string;
+  expr: QueryPlanNode;
+};
+declare type QueryPlanDbQuery = {
+  type: 'rawSql';
+  sql: string;
+  args: PrismaValue[];
+  argTypes: ArgType[];
+} | {
+  type: 'templateSql';
+  fragments: Fragment[];
+  placeholderFormat: PlaceholderFormat;
+  args: PrismaValue[];
+  argTypes: DynamicArgType[];
+  chunkable: boolean;
+};
+declare type QueryPlanNode = {
+  type: 'value';
+  args: PrismaValue;
+} | {
+  type: 'seq';
+  args: QueryPlanNode[];
+} | {
+  type: 'get';
+  args: {
+    name: string;
+  };
+} | {
+  type: 'let';
+  args: {
+    bindings: QueryPlanBinding[];
+    expr: QueryPlanNode;
+  };
+} | {
+  type: 'getFirstNonEmpty';
+  args: {
+    names: string[];
+  };
+} | {
+  type: 'query';
+  args: QueryPlanDbQuery;
+} | {
+  type: 'execute';
+  args: QueryPlanDbQuery;
+} | {
+  type: 'reverse';
+  args: QueryPlanNode;
+} | {
+  type: 'sum';
+  args: QueryPlanNode[];
+} | {
+  type: 'concat';
+  args: QueryPlanNode[];
+} | {
+  type: 'unique';
+  args: QueryPlanNode;
+} | {
+  type: 'required';
+  args: QueryPlanNode;
+} | {
+  type: 'join';
+  args: {
+    parent: QueryPlanNode;
+    children: JoinExpression[];
+  };
+} | {
+  type: 'mapField';
+  args: {
+    field: string;
+    records: QueryPlanNode;
+  };
+} | {
+  type: 'transaction';
+  args: QueryPlanNode;
+} | {
+  type: 'dataMap';
+  args: {
+    expr: QueryPlanNode;
+    structure: ResultNode;
+    enums: Record<string, Record<string, string>>;
+  };
+} | {
+  type: 'validate';
+  args: {
+    expr: QueryPlanNode;
+    rules: DataRule[];
+  } & ValidationError;
+} | {
+  type: 'if';
+  args: {
+    value: QueryPlanNode;
+    rule: DataRule;
+    then: QueryPlanNode;
+    else: QueryPlanNode;
+  };
+} | {
+  type: 'unit';
+} | {
+  type: 'diff';
+  args: {
+    from: QueryPlanNode;
+    to: QueryPlanNode;
+    fields: string[];
+  };
+} | {
+  type: 'initializeRecord';
+  args: {
+    expr: QueryPlanNode;
+    fields: Record<string, FieldInitializer>;
+  };
+} | {
+  type: 'mapRecord';
+  args: {
+    expr: QueryPlanNode;
+    fields: Record<string, FieldOperation>;
+  };
+} | {
+  type: 'process';
+  args: {
+    expr: QueryPlanNode;
+    operations: InMemoryOps;
+  };
+};
 
 /**
  * Create raw SQL statement.
@@ -2573,7 +2789,7 @@ declare type RequestBatchOptions<InteractiveTransactionPayload> = {
   traceparent?: string;
   numTry?: number;
   containsWrite: boolean;
-  customDataProxyFetch?: CustomDataProxyFetch;
+  customDataProxyFetch?: AccelerateExtensionFetchDecorator;
 };
 declare interface RequestError {
   error: string;
@@ -2618,7 +2834,7 @@ declare type RequestOptions<InteractiveTransactionPayload> = {
   numTry?: number;
   interactiveTransaction?: InteractiveTransactionOptions<InteractiveTransactionPayload>;
   isWrite: boolean;
-  customDataProxyFetch?: CustomDataProxyFetch;
+  customDataProxyFetch?: AccelerateExtensionFetchDecorator;
 };
 declare type RequestParams = {
   modelName?: string;
@@ -2635,7 +2851,7 @@ declare type RequestParams = {
   otelParentCtx?: Context;
   otelChildCtx?: Context;
   globalOmit?: GlobalOmitOptions$1;
-  customDataProxyFetch?: CustomDataProxyFetch;
+  customDataProxyFetch?: AccelerateExtensionFetchDecorator;
 };
 declare type RequiredExtensionArgs = NameArgs & ResultArgs & ModelArgs & ClientArgs & QueryOptions;
 declare type RequiredKeys$1<O> = { [K in keyof O]-?: {} extends Pick_2<O, K> ? never : K }[keyof O];
@@ -2685,6 +2901,18 @@ declare type ResultFieldDefinition = {
   needs?: { [FieldName in string]: boolean };
   compute: ResultArgsFieldCompute;
 };
+declare type ResultNode = {
+  type: 'affectedRows';
+} | {
+  type: 'object';
+  fields: Record<string, ResultNode>;
+  serializedName: string | null;
+  skipNulls: boolean;
+} | {
+  type: 'field';
+  dbName: string;
+  fieldType: FieldType$1;
+};
 declare type Return<T> = T extends ((...args: any[]) => infer R) ? R : T;
 declare type RuntimeDataModel = {
   readonly models: Record<string, RuntimeModel>;
@@ -2699,7 +2927,7 @@ declare type Schema = ReadonlyDeep_2<{
   rootMutationType?: string;
   inputObjectTypes: {
     model?: InputType[];
-    prisma: InputType[];
+    prisma?: InputType[];
   };
   outputObjectTypes: {
     model: OutputType[];
@@ -2719,6 +2947,7 @@ declare type SchemaArg = ReadonlyDeep_2<{
   isNullable: boolean;
   isRequired: boolean;
   inputTypes: InputTypeRef[];
+  requiresOtherFields?: string[];
   deprecation?: Deprecation;
 }>;
 declare type SchemaEnum = ReadonlyDeep_2<{
@@ -3222,6 +3451,47 @@ declare type UserArgs_2 = any;
 declare namespace Utils {
   export { EmptyToUnknown, NeverToUnknown, PatchFlat, Omit_2 as Omit, Pick_2 as Pick, ComputeDeep, Compute, OptionalFlat$1 as OptionalFlat, ReadonlyDeep, Narrowable, Narrow, Exact, Cast, Record_2 as Record, UnwrapPromise, UnwrapTuple, Path, Fn, Call, RequiredKeys$1 as RequiredKeys, OptionalKeys, Optional, Return, ToTuple, RenameAndNestPayloadKeys, PayloadToResult, Select, Equals, Or$1 as Or, JsPromise };
 }
+declare type ValidationError = {
+  error_identifier: 'RELATION_VIOLATION';
+  context: {
+    relation: string;
+    modelA: string;
+    modelB: string;
+  };
+} | {
+  error_identifier: 'MISSING_RELATED_RECORD';
+  context: {
+    model: string;
+    relation: string;
+    relationType: string;
+    operation: string;
+    neededFor?: string;
+  };
+} | {
+  error_identifier: 'MISSING_RECORD';
+  context: {
+    operation: string;
+  };
+} | {
+  error_identifier: 'INCOMPLETE_CONNECT_INPUT';
+  context: {
+    expectedRows: number;
+  };
+} | {
+  error_identifier: 'INCOMPLETE_CONNECT_OUTPUT';
+  context: {
+    expectedRows: number;
+    relation: string;
+    relationType: string;
+  };
+} | {
+  error_identifier: 'RECORDS_NOT_CONNECTED';
+  context: {
+    relation: string;
+    parent: string;
+    child: string;
+  };
+};
 declare function validator<V>(): <S>(select: Exact<S, V>) => S;
 declare function validator<C, M extends Exclude<keyof C, `$${string}`>, O extends keyof C[M] & Operation>(client: C, model: M, operation: O): <S>(select: Exact<S, Args<C[M], O>>) => S;
 declare function validator<C, M extends Exclude<keyof C, `$${string}`>, O extends keyof C[M] & Operation, P extends keyof Args<C[M], O>>(client: C, model: M, operation: O, prop: P): <S>(select: Exact<S, Args<C[M], O>[P]>) => S;
@@ -3402,8 +3672,8 @@ declare namespace Prisma {
   export import Exact = $Public.Exact;
 
   /**
-   * Prisma Client JS version: 6.17.0
-   * Query Engine version: c0aafc03b8ef6cdced8654b9a817999e02457d6a
+   * Prisma Client JS version: 6.17.1
+   * Query Engine version: 272a37d34178c2894197e17273bf937f25acdeac
    */
   export type PrismaVersion = {
     client: string;
@@ -3928,4 +4198,4 @@ declare class PrismaContractor implements DatabaseContract {
   }): Promise<any>;
 }
 //#endregion
-export { PrismaContractor as PrismaProvider };
+export { PrismaContractor };
