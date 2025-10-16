@@ -25,7 +25,7 @@ export class _CAuth<
 	T extends string[],
 	TContractor extends RoutesContract<any> = RoutesContract<any>,
 > {
-	#config: Omit<CAuthOptions, 'roles'> & {
+	readonly #config: Omit<CAuthOptions, 'roles'> & {
 		roles: T;
 		routeContractor: TContractor;
 	};
@@ -42,7 +42,6 @@ export class _CAuth<
 				`❌ Failed to initiate CAuth. You provided an invalid config!`,
 			);
 		}
-
 		this.#config = config;
 	}
 
@@ -51,86 +50,83 @@ export class _CAuth<
 	}
 
 	/**
-	 * @description Authentication Guard Middleware. Include 'roles' for a custom auth guard.
-	 *
-	 * If 'roles' is empty it allows all authenticated users, without respecting specific role
-	 *
-	 * @default undefined
+	 * @description Auth guard middleware — roles optional.
+	 * Automatically typed as the handler type from the contractor (e.g. Express.RequestHandler).
 	 */
 	public Guard = (roles?: Array<T[number]>) =>
 		this.#config.routeContractor.Guard({
 			config: this.#config,
 			tokens: this.Tokens,
 			roles,
-		});
+		} as any);
 
+	/**
+	 * Route Handlers — typed from the contractor automatically.
+	 */
 	public Routes = {
-		Register: () =>
+		Register: (): ReturnType<TContractor['Register']> =>
 			this.#config.routeContractor.Register({
 				config: this.#config,
 				tokens: this.Tokens,
-			}),
+			} as any) as ReturnType<TContractor['Register']>,
 
-		Login: () =>
+		Login: (): ReturnType<TContractor['Login']> =>
 			this.#config.routeContractor.Login({
 				config: this.#config,
 				tokens: this.Tokens,
-			}),
+			} as any) as ReturnType<TContractor['Login']>,
 
-		Logout: () =>
+		Logout: (): ReturnType<TContractor['Logout']> =>
 			this.#config.routeContractor.Logout({
 				config: this.#config,
 				tokens: this.Tokens,
-			}),
+			} as any) as ReturnType<TContractor['Logout']>,
 
-		Refresh: () =>
+		Refresh: (): ReturnType<TContractor['Refresh']> =>
 			this.#config.routeContractor.Refresh({
 				config: this.#config,
 				tokens: this.Tokens,
-			}),
+			} as any) as ReturnType<TContractor['Refresh']>,
 
-		ChangePassword: (userId: string) =>
+		ChangePassword: (
+			userId: string,
+		): ReturnType<TContractor['ChangePassword']> =>
 			this.#config.routeContractor.ChangePassword({
 				config: this.#config,
 				tokens: this.Tokens,
-				userId: userId,
-			}),
+				userId,
+			} as any) as ReturnType<TContractor['ChangePassword']>,
 	};
 
 	public FN = {
-		Login: ({ ...args }: LoginSchemaType) =>
+		Login: (args: LoginSchemaType) =>
 			LoginFn({ config: this.#config, tokens: this.Tokens }, args),
 
-		Register: ({ ...args }: RegisterSchemaType) =>
+		Register: (args: RegisterSchemaType) =>
 			RegisterFn({ config: this.#config, tokens: this.Tokens }, args),
 
-		Logout: ({ ...args }: LogoutSchemaType) =>
+		Logout: (args: LogoutSchemaType) =>
 			LogoutFn({ config: this.#config, tokens: this.Tokens }, args),
 
-		Refresh: ({ ...args }: RefreshTokenSchemaType) =>
+		Refresh: (args: RefreshTokenSchemaType) =>
 			RefreshFn({ config: this.#config, tokens: this.Tokens }, args),
 
-		ChangePassword: ({ ...args }: ChangePasswordSchemaType) =>
+		ChangePassword: (args: ChangePasswordSchemaType) =>
 			ChangePasswordFn({ config: this.#config, tokens: this.Tokens }, args),
 
-		RequestOTPCode: ({
-			...args
-		}: Omit<LoginSchemaType, 'password'> & {
-			password?: string;
-			usePassword?: boolean;
-			otpPurpose: OtpPurpose;
-		}) => RequestAuthCode({ config: this.#config, tokens: this.Tokens }, args),
+		RequestOTPCode: (
+			args: Omit<LoginSchemaType, 'password'> & {
+				password?: string;
+				usePassword?: boolean;
+				otpPurpose: OtpPurpose;
+			},
+		) => RequestAuthCode({ config: this.#config, tokens: this.Tokens }, args),
 
-		LoginWithOTP: ({
-			...args
-		}: Omit<LoginSchemaType, 'password'> & {
-			code: string;
-		}) =>
-			LoginWithCode({ config: this.#config, tokens: this.Tokens }, { ...args }),
+		LoginWithOTP: (
+			args: Omit<LoginSchemaType, 'password'> & { code: string },
+		) => LoginWithCode({ config: this.#config, tokens: this.Tokens }, args),
 
-		VerifyOTP: ({
-			...args
-		}: {
+		VerifyOTP: (args: {
 			id: string;
 			code: string;
 			otpPurpose: OtpPurpose;
@@ -148,14 +144,17 @@ export class _CAuth<
 		GenerateTokenPairs: (payload: any) =>
 			TokenFns.GenerateTokenPairs({ payload, config: this.#config }),
 
-		VerifyRefreshToken: <T>(token: any) =>
-			TokenFns.VerifyRefreshToken<T>({ token, config: this.#config }),
+		VerifyRefreshToken: <R>(token: any) =>
+			TokenFns.VerifyRefreshToken<R>({ token, config: this.#config }),
 
-		VerifyAccessToken: <T>(token: any) =>
-			TokenFns.VerifyAccessToken<T>({ token, config: this.#config }),
+		VerifyAccessToken: <R>(token: any) =>
+			TokenFns.VerifyAccessToken<R>({ token, config: this.#config }),
 	};
 }
 
+/**
+ * return typed instance of `_CAuth` while preserving contractor type.
+ */
 export function CAuth<
 	const T extends string[],
 	const TContractor extends RoutesContract<any>,
@@ -165,5 +164,5 @@ export function CAuth<
 		routeContractor: TContractor;
 	},
 ) {
-	return new _CAuth(options);
+	return new _CAuth<T, TContractor>(options);
 }
