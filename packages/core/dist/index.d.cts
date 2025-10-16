@@ -95,11 +95,8 @@ type Result$1<T, E extends FNError = FNError> = {
   errors: E[];
 };
 //#endregion
-//#region src/types/helpers.t.d.ts
-type LooseAutocomplete<T extends string> = T | Omit<string, T>;
-//#endregion
 //#region src/types/otp-purpose.t.d.ts
-type OtpPurpose = LooseAutocomplete<'LOGIN' | 'RESET_PASSWORD' | 'ACTION'>;
+type OtpPurpose = 'LOGIN' | 'RESET_PASSWORD' | 'ACTION';
 //#endregion
 //#region src/types/database.contract.d.ts
 interface DatabaseContract {
@@ -211,13 +208,13 @@ interface RoutesContract {
 declare const CAuthOptionsSchema: z$1.ZodObject<{
   dbContractor: z$1.ZodCustom<DatabaseContract, DatabaseContract>;
   routeContractor: z$1.ZodCustom<RoutesContract, RoutesContract>;
-  refreshTokenSecret: z$1.ZodString;
-  accessTokenSecret: z$1.ZodString;
   roles: z$1.ZodArray<z$1.ZodString>;
-  jwtConfig: z$1.ZodOptional<z$1.ZodObject<{
+  jwtConfig: z$1.ZodObject<{
+    refreshTokenSecret: z$1.ZodString;
+    accessTokenSecret: z$1.ZodString;
     accessTokenLifeSpan: z$1.ZodOptional<z$1.ZodCustom<ms.StringValue, ms.StringValue>>;
     refreshTokenLifeSpan: z$1.ZodOptional<z$1.ZodCustom<ms.StringValue, ms.StringValue>>;
-  }, z$1.z.core.$strip>>;
+  }, z$1.z.core.$strip>;
   otpConfig: z$1.ZodObject<{
     expiresIn: z$1.ZodOptional<z$1.ZodNumber>;
     length: z$1.ZodOptional<z$1.ZodNumber>;
@@ -244,11 +241,11 @@ declare const RegisterSchema: z.ZodObject<{
 }, z.core.$strip>;
 type RegisterSchemaType = z.infer<typeof RegisterSchema>;
 declare const RefreshTokenSchema: z.ZodObject<{
-  refreshToken: z.ZodJWT;
+  refreshToken: z.ZodString;
 }, z.core.$strip>;
 type RefreshTokenSchemaType = z.infer<typeof RefreshTokenSchema>;
 declare const LogoutSchema: z.ZodObject<{
-  refreshToken: z.ZodJWT;
+  refreshToken: z.ZodString;
 }, z.core.$strip>;
 type LogoutSchemaType = z.infer<typeof LogoutSchema>;
 declare const ChangePasswordSchema: z.ZodObject<{
