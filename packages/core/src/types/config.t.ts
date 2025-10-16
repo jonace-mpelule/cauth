@@ -17,15 +17,13 @@ const MS = z.custom<ms.StringValue>();
 export const CAuthOptionsSchema = z.object({
 	dbContractor: DbContractor,
 	routeContractor: RouteContractor,
-	refreshTokenSecret: z.string(),
-	accessTokenSecret: z.string(),
 	roles: z.array(z.string()).min(1),
-	jwtConfig: z
-		.object({
-			accessTokenLifeSpan: MS.optional(),
-			refreshTokenLifeSpan: MS.optional(),
-		})
-		.optional(),
+	jwtConfig: z.object({
+		refreshTokenSecret: z.string(),
+		accessTokenSecret: z.string(),
+		accessTokenLifeSpan: MS.optional(),
+		refreshTokenLifeSpan: MS.optional(),
+	}),
 	otpConfig: z.object({
 		/**
 		 *  @description OTP Timespan in milliseconds
