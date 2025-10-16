@@ -20,7 +20,7 @@ type LogoutDeps = {
 export async function LogoutFn(
 	{ config, tokens }: LogoutDeps,
 	{ ...args }: LogoutSchemaType,
-): Promise<Result<unknown>> {
+): Promise<Result<any>> {
 	const out = LogoutSchema.safeParse(args);
 
 	if (!out.success) {

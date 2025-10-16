@@ -3,7 +3,7 @@ import { CredentialMismatchError, InvalidDataError } from '@errors/errors.ts';
 
 import bcrypt from 'bcrypt';
 import type { CAuthOptions } from '@/core/src/types/config.t.ts';
-import type { AuthModel } from '../types/auth.t.ts';
+import type { Account, Tokens } from '../types/auth.t.ts';
 import { LoginSchema, type LoginSchemaType } from '../types/dto-schemas.t.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
 import { formatZodIssues } from '../utils/zod-joined-issues.ts';
@@ -14,8 +14,8 @@ type loginDeps = {
 };
 
 type LoginSuccess = {
-	account: Omit<AuthModel, 'refreshTokens' | 'passwordHash'>;
-	tokens: Awaited<ReturnType<_CAuth<any>['Tokens']['GenerateTokenPairs']>>;
+	account: Account;
+	tokens: Tokens;
 };
 
 export async function LoginFn(

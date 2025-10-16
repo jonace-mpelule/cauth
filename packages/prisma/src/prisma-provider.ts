@@ -5,7 +5,7 @@ import type { AuthModel } from '@/core/src/types/auth.t.ts';
 import type { OtpPurpose } from '@/core/src/types/otp-purpose.t.ts';
 import type { PrismaClient } from './generated/prisma/index.d.ts';
 
-export class PrismaProvider implements DatabaseContract {
+export class PrismaContractor implements DatabaseContract {
 	#client: PrismaClient;
 	constructor(private client: PrismaClient) {
 		this.#client = client;

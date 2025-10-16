@@ -1,5 +1,20 @@
 import z from 'zod';
 
+export type Account = {
+	id: string;
+	phoneNumber: string;
+	email: string;
+	role: string;
+	lastLogin: Date;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type Tokens = {
+	accessToken: string;
+	refreshToken: string;
+};
+
 export const AuthModelSchema = z.object({
 	id: z.string(),
 	phoneNumber: z.string(),

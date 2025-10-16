@@ -4,7 +4,7 @@ import {
 	InvalidDataError,
 	InvalidRefreshTokenError,
 } from '../errors/errors.ts';
-import type { AuthModel } from '../types/auth.t.ts';
+import type { Account, Tokens } from '../types/auth.t.ts';
 import type { CAuthOptions } from '../types/config.t.ts';
 import {
 	RefreshTokenSchema,
@@ -20,8 +20,8 @@ type RefreshDeps = {
 };
 
 type RefreshSuccess = {
-	account: Omit<AuthModel, 'passwordHash' | 'refreshTokens'>;
-	tokens: Awaited<ReturnType<_CAuth<any>['Tokens']['GenerateTokenPairs']>>;
+	account: Account;
+	tokens: Tokens;
 };
 
 export async function RefreshFn(

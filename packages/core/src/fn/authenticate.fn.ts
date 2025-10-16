@@ -13,6 +13,7 @@ import {
 import { formatZodIssues } from '@utils/zod-joined-issues.ts';
 import bcrypt from 'bcrypt';
 import { fail, ok, type Result } from '@/core/src/types/result.t.ts';
+import type { Account, Tokens } from '../types/auth.t.ts';
 import type { OtpPurpose } from '../types/otp-purpose.t.ts';
 
 type AuthenticateDeps = {
@@ -93,6 +94,11 @@ export async function RequestAuthCode(
 	});
 }
 
+type LoginSuccess = {
+	account: Account;
+	tokens: Tokens;
+};
+
 export async function LoginWithCode(
 	{ config, tokens }: AuthenticateDeps,
 	{
@@ -100,7 +106,7 @@ export async function LoginWithCode(
 	}: Omit<LoginSchemaType, 'password'> & {
 		code: string;
 	},
-) {
+): Promise<Result<LoginSuccess>> {
 	const out = LoginSchema.safeParse({
 		email: args.email,
 		phoneNumber: args.phoneNumber,

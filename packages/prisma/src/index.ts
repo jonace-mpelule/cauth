@@ -1,1 +1,1 @@
-export { PrismaProvider } from './prisma-provider.ts';
+export { PrismaContractor as PrismaProvider } from './prisma-provider.ts';

@@ -12,7 +12,7 @@ import {
 import { formatZodIssues } from '@utils/zod-joined-issues.ts';
 import bcrypt from 'bcrypt';
 import { fail, ok, type Result } from '@/core/src/types/result.t.ts';
-import type { AuthModel } from '../types/auth.t.ts';
+import type { Account, Tokens } from '../types/auth.t.ts';
 
 type RegisterDeps = {
 	config: CAuthOptions;
@@ -20,8 +20,8 @@ type RegisterDeps = {
 };
 
 type RefreshSuccess = {
-	account: Omit<AuthModel, 'passwordHash' | 'refreshTokens'>;
-	tokens: Awaited<ReturnType<_CAuth<any>['Tokens']['GenerateTokenPairs']>>;
+	account: Account;
+	tokens: Tokens;
 };
 
 export async function RegisterFn(
