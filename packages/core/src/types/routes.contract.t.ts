@@ -12,16 +12,17 @@ export type AuthGuardDeps = {
 	roles?: Array<string>;
 };
 
-export interface RoutesContract {
-	Login({ ...config }: RouteDeps): any;
-
-	Register({ ...config }: RouteDeps): any;
-
-	Logout({ ...config }: RouteDeps): any;
-
-	Guard({ ...config }: AuthGuardDeps): any;
-
-	Refresh({ ...config }: AuthGuardDeps): any;
-
-	ChangePassword({ ...config }: RouteDeps & { userId: string }): any;
+/**
+ * Generic RoutesContract
+ * THandler is generic, defaults to any function
+ */
+export interface RoutesContract<
+	THandler extends (...args: any[]) => any = (...args: any[]) => any,
+> {
+	Login({ ...config }: RouteDeps): THandler;
+	Register({ ...config }: RouteDeps): THandler;
+	Logout({ ...config }: RouteDeps): THandler;
+	Guard({ ...config }: AuthGuardDeps): THandler;
+	Refresh({ ...config }: AuthGuardDeps): THandler;
+	ChangePassword({ ...config }: RouteDeps & { userId: string }): THandler;
 }
