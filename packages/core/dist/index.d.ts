@@ -273,10 +273,11 @@ declare const ChangePasswordSchema: z.ZodObject<{
 type ChangePasswordSchemaType = z.infer<typeof ChangePasswordSchema>;
 //#endregion
 //#region src/cauth.d.ts
-declare class _CAuth<T extends string[]> {
+declare class _CAuth<T extends string[], TContractor extends RoutesContract<any> = RoutesContract<any>> {
   #private;
   constructor(config: Omit<CAuthOptions, 'roles'> & {
     roles: T;
+    routeContractor: TContractor;
   });
   get RoleType(): T[number];
   /**
@@ -358,8 +359,9 @@ declare class _CAuth<T extends string[]> {
     VerifyAccessToken: <T_1>(token: any) => Promise<T_1 | null>;
   };
 }
-declare function CAuth<const T extends string[]>(options: Omit<CAuthOptions, 'roles'> & {
+declare function CAuth<const T extends string[], const TContractor extends RoutesContract<any>>(options: Omit<CAuthOptions, 'roles'> & {
   roles: T;
-}): _CAuth<T>;
+  routeContractor: TContractor;
+}): _CAuth<T, RoutesContract<(...args: any[]) => any> & TContractor>;
 //#endregion
 export { AccountNotFoundError, CAuth, type CAuthOptions, CredentialMismatchError, type DatabaseContract, DuplicateAccountError, InvalidDataError, InvalidOTPCode, InvalidRefreshTokenError, InvalidRoleError, type RoutesContract };

@@ -19,11 +19,23 @@ import type {
 	RegisterSchemaType,
 } from './types/dto-schemas.t.ts';
 import type { OtpPurpose } from './types/otp-purpose.t.ts';
+import type { RoutesContract } from './types/routes.contract.t.ts';
 
-export class _CAuth<T extends string[]> {
-	#config: Omit<CAuthOptions, 'roles'> & { roles: T };
+export class _CAuth<
+	T extends string[],
+	TContractor extends RoutesContract<any> = RoutesContract<any>,
+> {
+	#config: Omit<CAuthOptions, 'roles'> & {
+		roles: T;
+		routeContractor: TContractor;
+	};
 
-	constructor(config: Omit<CAuthOptions, 'roles'> & { roles: T }) {
+	constructor(
+		config: Omit<CAuthOptions, 'roles'> & {
+			roles: T;
+			routeContractor: TContractor;
+		},
+	) {
 		const parsed = CAuthOptionsSchema.safeParse(config);
 		if (!parsed.success) {
 			throw new Error(
@@ -144,8 +156,14 @@ export class _CAuth<T extends string[]> {
 	};
 }
 
-export function CAuth<const T extends string[]>(
-	options: Omit<CAuthOptions, 'roles'> & { roles: T },
+export function CAuth<
+	const T extends string[],
+	const TContractor extends RoutesContract<any>,
+>(
+	options: Omit<CAuthOptions, 'roles'> & {
+		roles: T;
+		routeContractor: TContractor;
+	},
 ) {
 	return new _CAuth(options);
 }
