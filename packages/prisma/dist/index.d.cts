@@ -4,6 +4,19 @@ import z$1, { z } from "zod";
 //#region rolldown:runtime
 //#endregion
 //#region ../core/src/types/auth.t.d.ts
+type Account = {
+  id: string;
+  phoneNumber: string;
+  email: string;
+  role: string;
+  lastLogin: Date;
+  createdAt: Date;
+  updatedAt: Date;
+};
+type Tokens = {
+  accessToken: string;
+  refreshToken: string;
+};
 declare const AuthModelSchema: z$1.ZodObject<{
   id: z$1.ZodString;
   phoneNumber: z$1.ZodString;
@@ -170,23 +183,23 @@ declare class _CAuth<T extends string[]> {
     Login: ({
       ...args
     }: LoginSchemaType) => Promise<Result$2<{
-      account: Omit<AuthModel, "refreshTokens" | "passwordHash">;
-      tokens: Awaited<ReturnType<_CAuth<any>>>;
+      account: Account;
+      tokens: Tokens;
     }>>;
     Register: ({
       ...args
     }: RegisterSchemaType) => Promise<Result<{
-      account: Omit<AuthModel, "passwordHash" | "refreshTokens">;
-      tokens: Awaited<ReturnType<_CAuth<any>>>;
+      account: Account;
+      tokens: Tokens;
     }>>;
     Logout: ({
       ...args
-    }: LogoutSchemaType) => Promise<Result<unknown>>;
+    }: LogoutSchemaType) => Promise<Result<any>>;
     Refresh: ({
       ...args
     }: RefreshTokenSchemaType) => Promise<Result$2<{
-      account: Omit<AuthModel, "passwordHash" | "refreshTokens">;
-      tokens: Awaited<ReturnType<_CAuth<any>["Tokens"]["GenerateTokenPairs"]>>;
+      account: Account;
+      tokens: Tokens;
     }>>;
     ChangePassword: ({
       ...args
@@ -205,7 +218,10 @@ declare class _CAuth<T extends string[]> {
       ...args
     }: Omit<LoginSchemaType, "password"> & {
       code: string;
-    }) => Promise<any>;
+    }) => Promise<Result<{
+      account: Account;
+      tokens: Tokens;
+    }>>;
     VerifyOTP: ({
       ...args
     }: {
@@ -3836,7 +3852,7 @@ declare namespace Prisma {
 }
 //#endregion
 //#region src/prisma-provider.d.ts
-declare class PrismaProvider implements DatabaseContract {
+declare class PrismaContractor implements DatabaseContract {
   #private;
   private client;
   constructor(client: PrismaClient);
@@ -3912,4 +3928,4 @@ declare class PrismaProvider implements DatabaseContract {
   }): Promise<any>;
 }
 //#endregion
-export { PrismaProvider };
+export { PrismaContractor as PrismaProvider };
