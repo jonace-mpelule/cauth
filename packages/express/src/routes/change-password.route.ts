@@ -1,10 +1,10 @@
 import bcrypt from 'bcrypt';
 import type { Request, Response } from 'express';
-import type { _CAuth } from '@/core/src/cauth';
-import ErrorValues from '@/core/src/errors/errorValues';
-import type { CAuthOptions } from '@/core/src/types/config.t';
-import { ChangePasswordSchema } from '@/core/src/types/dto-schemas.t';
-import { formatZodIssues } from '@/core/src/utils/zod-joined-issues';
+import type { _CAuth } from '@/core/src/cauth.ts';
+import ErrorValues from '@/core/src/errors/errorValues.ts';
+import type { CAuthOptions } from '@/core/src/types/config.t.ts';
+import { ChangePasswordSchema } from '@/core/src/types/dto-schemas.t.ts';
+import { formatZodIssues } from '@/core/src/utils/zod-joined-issues.ts';
 
 type ChangePasswordDeps = {
 	config: CAuthOptions;

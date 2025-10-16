@@ -70,9 +70,11 @@ export async function RefreshFn(
 		id: account.id,
 		role: account.role,
 	});
-	await config.dbContractor.updateAccountLogin({
+
+	await config.dbContractor.removeAndAddRefreshToken({
 		id: account.id,
-		refreshToken: tokenPair.refreshToken,
+		refreshToken: args.refreshToken,
+		newRefreshToken: tokenPair.refreshToken,
 	});
 
 	// REMOVE PASSWORD AND REFRESH TOKENS

@@ -1,5 +1,5 @@
-import ms from "ms";
 import z$1, { z } from "zod";
+import ms from "ms";
 
 //#region src/errors/errors.d.ts
 declare class CError {
@@ -63,6 +63,20 @@ declare class InvalidOTPCode extends Error implements CError {
   constructor();
 }
 //#endregion
+//#region src/types/auth.t.d.ts
+declare const AuthModelSchema: z$1.ZodObject<{
+  id: z$1.ZodString;
+  phoneNumber: z$1.ZodString;
+  email: z$1.ZodString;
+  passwordHash: z$1.ZodOptional<z$1.ZodString>;
+  role: z$1.ZodString;
+  lastLogin: z$1.ZodDate;
+  refreshTokens: z$1.ZodOptional<z$1.ZodArray<z$1.ZodString>>;
+  createdAt: z$1.ZodDate;
+  updatedAt: z$1.ZodDate;
+}, z$1.z.core.$strip>;
+type AuthModel = z$1.infer<typeof AuthModelSchema>;
+//#endregion
 //#region src/types/result.t.d.ts
 type FNError = {
   type: string;
@@ -80,51 +94,6 @@ type Result$1<T, E extends FNError = FNError> = {
   success: false;
   errors: E[];
 };
-//#endregion
-//#region src/types/auth.t.d.ts
-declare const AuthModelSchema: z$1.ZodObject<{
-  id: z$1.ZodString;
-  phoneNumber: z$1.ZodString;
-  email: z$1.ZodString;
-  passwordHash: z$1.ZodOptional<z$1.ZodString>;
-  role: z$1.ZodString;
-  lastLogin: z$1.ZodDate;
-  refreshTokens: z$1.ZodOptional<z$1.ZodArray<z$1.ZodString>>;
-  createdAt: z$1.ZodDate;
-  updatedAt: z$1.ZodDate;
-}, z$1.z.core.$strip>;
-type AuthModel = z$1.infer<typeof AuthModelSchema>;
-declare const AuthModelSelect: {
-  id: boolean;
-  phoneNumber: boolean;
-  email: boolean;
-  passwordHash: boolean;
-  role: boolean;
-  lastLogin: boolean;
-  refreshTokens: boolean;
-  createdAt: boolean;
-  updatedAt: boolean;
-};
-declare const OtpSchema: z$1.ZodObject<{
-  id: z$1.ZodString;
-  auth: z$1.ZodOptional<z$1.ZodObject<{
-    id: z$1.ZodString;
-    phoneNumber: z$1.ZodString;
-    email: z$1.ZodString;
-    passwordHash: z$1.ZodOptional<z$1.ZodString>;
-    role: z$1.ZodString;
-    lastLogin: z$1.ZodDate;
-    refreshTokens: z$1.ZodOptional<z$1.ZodArray<z$1.ZodString>>;
-    createdAt: z$1.ZodDate;
-    updatedAt: z$1.ZodDate;
-  }, z$1.z.core.$strip>>;
-  code: z$1.ZodString;
-  purpose: z$1.ZodString;
-  expiresAt: z$1.ZodDate;
-  createdAt: z$1.ZodDate;
-  updatedAt: z$1.ZodDate;
-}, z$1.z.core.$strip>;
-type OtpType = z$1.infer<typeof OtpSchema>;
 //#endregion
 //#region src/types/helpers.t.d.ts
 type LooseAutocomplete<T extends string> = T | Omit<string, T>;
@@ -180,7 +149,11 @@ interface DatabaseContract {
   }: {
     id: string;
   }): Promise<void>;
-  createOTP<T = OtpType>({
+  createOTP<T = {
+    code: string;
+    purpose: string;
+    expiresAt: Date;
+  }>({
     config
   }: {
     config: CAuthOptions;
@@ -255,7 +228,7 @@ type CAuthOptions = z$1.infer<typeof CAuthOptionsSchema>;
 //#region src/types/dto-schemas.t.d.ts
 declare const LoginSchema: z.ZodUnion<readonly [z.ZodObject<{
   email: z.ZodEmail;
-  phoneNumber: z.ZodNever;
+  phoneNumber: z.ZodOptional<z.ZodNever>;
   password: z.ZodString;
 }, z.core.$strip>, z.ZodObject<{
   phoneNumber: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
@@ -332,6 +305,30 @@ declare class _CAuth<T extends string[]> {
     ChangePassword: ({
       ...args
     }: ChangePasswordSchemaType) => Promise<Result<unknown>>;
+    RequestOTPCode: ({
+      ...args
+    }: Omit<LoginSchemaType, "password"> & {
+      password?: string;
+      usePassword?: boolean;
+      otpPurpose: OtpPurpose;
+    }) => Promise<Result<{
+      id: string;
+      code: string;
+    }>>;
+    LoginWithOTP: ({
+      ...args
+    }: Omit<LoginSchemaType, "password"> & {
+      code: string;
+    }) => Promise<any>;
+    VerifyOTP: ({
+      ...args
+    }: {
+      id: string;
+      code: string;
+      otpPurpose: OtpPurpose;
+    }) => Promise<{
+      isValid: boolean;
+    }>;
   };
   Tokens: {
     GenerateRefreshToken: (payload: any) => Promise<string>;
@@ -348,4 +345,4 @@ declare function CAuth<const T extends string[]>(options: Omit<CAuthOptions, 'ro
   roles: T;
 }): _CAuth<T>;
 //#endregion
-export { AccountNotFoundError, AuthModel, AuthModelSchema, AuthModelSelect, CAuth, CAuthOptions, CAuthOptionsSchema, CredentialMismatchError, DatabaseContract, DuplicateAccountError, InvalidDataError, InvalidOTPCode, InvalidRefreshTokenError, InvalidRoleError, OtpSchema, OtpType };
+export { AccountNotFoundError, CAuth, type CAuthOptions, CredentialMismatchError, type DatabaseContract, DuplicateAccountError, InvalidDataError, InvalidOTPCode, InvalidRefreshTokenError, InvalidRoleError, type RoutesContract };

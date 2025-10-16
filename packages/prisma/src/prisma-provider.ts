@@ -1,7 +1,7 @@
 import type { CAuthOptions } from '@core/types/config.t.ts';
 import type { DatabaseContract } from '@core/types/database.contract.ts';
 import bcrypt from 'bcrypt';
-import type { AuthModel, OtpType } from '@/core/src/types/auth.t.ts';
+import type { AuthModel } from '@/core/src/types/auth.t.ts';
 import type { OtpPurpose } from '@/core/src/types/otp-purpose.t.ts';
 import type { PrismaClient } from './generated/prisma/index.d.ts';
 
@@ -11,7 +11,7 @@ export class PrismaProvider implements DatabaseContract {
 		this.#client = client;
 	}
 
-	async createOTP<T = OtpType>(
+	async createOTP<T = { code: string; purpose: string; expiresAt: Date }>(
 		{ config }: { config: CAuthOptions },
 		{
 			...args
@@ -35,17 +35,35 @@ export class PrismaProvider implements DatabaseContract {
 		// Hash the otp Code
 		const hashCode = await bcrypt.hash(code, 10);
 
-		const otp = await this.#client.otp.create({
-			data: {
-				id: args.id,
-				code: hashCode,
-				isUsed: false,
-				purpose: args.purpose as any,
-				expiresAt,
-			},
-		});
+		let otp: any;
 
-		return otp as T;
+		try {
+			otp = await (this.#client as any).otp.update({
+				where: {
+					id: args.id,
+				},
+				data: {
+					code: hashCode,
+					isUsed: false,
+					purpose: args.purpose as any,
+					expiresAt,
+				},
+			});
+		} catch (err: any) {
+			if (err.code === 'P2025') {
+				otp = await (this.#client as any).otp.create({
+					data: {
+						id: args.id,
+						code: hashCode,
+						isUsed: false,
+						purpose: args.purpose as any,
+						expiresAt,
+					},
+				});
+			}
+		}
+
+		return { code: code, purpose: otp.purpose, expiresAt } as T;
 	}
 
 	async verifyOTP<T = { isValid: boolean }>({
@@ -55,7 +73,7 @@ export class PrismaProvider implements DatabaseContract {
 		code: string;
 		purpose: OtpPurpose;
 	}): Promise<T> {
-		const otp = await this.#client.otp.findFirst({
+		const otp = await (this.#client as any).otp.findFirst({
 			where: {
 				id: args.id,
 			},
@@ -83,7 +101,7 @@ export class PrismaProvider implements DatabaseContract {
 			return { isValid: false } as T;
 		}
 
-		await this.#client.otp.update({
+		await (this.#client as any).otp.update({
 			where: { id: otp.id },
 			data: { isUsed: true },
 		});

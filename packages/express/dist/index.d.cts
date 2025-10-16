@@ -1,3 +1,4 @@
+import * as express0 from "express";
 import z$1, { z } from "zod";
 import ms from "ms";
 
@@ -14,26 +15,6 @@ declare const AuthModelSchema: z$1.ZodObject<{
   updatedAt: z$1.ZodDate;
 }, z$1.z.core.$strip>;
 type AuthModel = z$1.infer<typeof AuthModelSchema>;
-declare const OtpSchema: z$1.ZodObject<{
-  id: z$1.ZodString;
-  auth: z$1.ZodOptional<z$1.ZodObject<{
-    id: z$1.ZodString;
-    phoneNumber: z$1.ZodString;
-    email: z$1.ZodString;
-    passwordHash: z$1.ZodOptional<z$1.ZodString>;
-    role: z$1.ZodString;
-    lastLogin: z$1.ZodDate;
-    refreshTokens: z$1.ZodOptional<z$1.ZodArray<z$1.ZodString>>;
-    createdAt: z$1.ZodDate;
-    updatedAt: z$1.ZodDate;
-  }, z$1.z.core.$strip>>;
-  code: z$1.ZodString;
-  purpose: z$1.ZodString;
-  expiresAt: z$1.ZodDate;
-  createdAt: z$1.ZodDate;
-  updatedAt: z$1.ZodDate;
-}, z$1.z.core.$strip>;
-type OtpType = z$1.infer<typeof OtpSchema>;
 //#endregion
 //#region ../core/src/types/result.t.d.ts
 type FNError = {
@@ -107,7 +88,11 @@ interface DatabaseContract {
   }: {
     id: string;
   }): Promise<void>;
-  createOTP<T = OtpType>({
+  createOTP<T = {
+    code: string;
+    purpose: string;
+    expiresAt: Date;
+  }>({
     config
   }: {
     config: CAuthOptions;
@@ -149,7 +134,7 @@ type CAuthOptions = z$1.infer<typeof CAuthOptionsSchema>;
 //#region ../core/src/types/dto-schemas.t.d.ts
 declare const LoginSchema: z.ZodUnion<readonly [z.ZodObject<{
   email: z.ZodEmail;
-  phoneNumber: z.ZodNever;
+  phoneNumber: z.ZodOptional<z.ZodNever>;
   password: z.ZodString;
 }, z.core.$strip>, z.ZodObject<{
   phoneNumber: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
@@ -226,6 +211,30 @@ declare class _CAuth<T extends string[]> {
     ChangePassword: ({
       ...args
     }: ChangePasswordSchemaType) => Promise<Result<unknown>>;
+    RequestOTPCode: ({
+      ...args
+    }: Omit<LoginSchemaType, "password"> & {
+      password?: string;
+      usePassword?: boolean;
+      otpPurpose: OtpPurpose;
+    }) => Promise<Result<{
+      id: string;
+      code: string;
+    }>>;
+    LoginWithOTP: ({
+      ...args
+    }: Omit<LoginSchemaType, "password"> & {
+      code: string;
+    }) => Promise<any>;
+    VerifyOTP: ({
+      ...args
+    }: {
+      id: string;
+      code: string;
+      otpPurpose: OtpPurpose;
+    }) => Promise<{
+      isValid: boolean;
+    }>;
   };
   Tokens: {
     GenerateRefreshToken: (payload: any) => Promise<string>;
@@ -274,12 +283,34 @@ interface RoutesContract {
 //#endregion
 //#region src/express.contractor.d.ts
 declare class ExpressContractor implements RoutesContract {
-  Register: () => any;
-  Login: () => any;
-  Logout: () => any;
-  Refresh: () => any;
-  ChangePassword: () => any;
-  Guard: () => any;
+  Register: ({
+    config,
+    tokens
+  }: RouteDeps) => (req: express0.Request, res: express0.Response) => Promise<express0.Response<any, Record<string, any>>>;
+  Login: ({
+    config,
+    tokens
+  }: RouteDeps) => (req: express0.Request, res: express0.Response) => Promise<express0.Response<any, Record<string, any>>>;
+  Logout: ({
+    config,
+    tokens
+  }: RouteDeps) => (req: express0.Request, res: express0.Response) => Promise<express0.Response<any, Record<string, any>>>;
+  Refresh: ({
+    config,
+    tokens
+  }: RouteDeps) => (req: express0.Request, res: express0.Response) => Promise<express0.Response<any, Record<string, any>>>;
+  ChangePassword: ({
+    config,
+    tokens,
+    userId
+  }: RouteDeps & {
+    userId: string;
+  }) => (req: express0.Request, res: express0.Response) => Promise<express0.Response<any, Record<string, any>>>;
+  Guard: ({
+    config,
+    tokens,
+    roles
+  }: AuthGuardDeps) => (req: express0.Request, res: express0.Response, next: express0.NextFunction) => Promise<void | express0.Response<any, Record<string, any>>>;
 }
 //#endregion
 //#region src/types/express.d.ts

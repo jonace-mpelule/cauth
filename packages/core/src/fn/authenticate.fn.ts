@@ -29,12 +29,19 @@ export async function RequestAuthCode(
 	{ config }: AuthenticateDeps,
 	{
 		...args
-	}: LoginSchemaType & {
+	}: Omit<LoginSchemaType, 'password'> & {
+		email?: string;
+		phoneNumber?: string;
+		password?: string;
 		usePassword?: boolean;
 		otpPurpose: OtpPurpose;
 	},
 ): Promise<Result<RequestAuthCode>> {
-	const out = LoginSchema.safeParse(args);
+	const out = LoginSchema.safeParse({
+		email: args.email,
+		phoneNumber: args.phoneNumber,
+		password: '',
+	});
 
 	if (!out.success) {
 		return fail({
@@ -94,7 +101,11 @@ export async function LoginWithCode(
 		code: string;
 	},
 ) {
-	const out = LoginSchema.safeParse(args);
+	const out = LoginSchema.safeParse({
+		email: args.email,
+		phoneNumber: args.phoneNumber,
+		password: '',
+	});
 
 	if (!out.success) {
 		return fail({
@@ -147,7 +158,7 @@ export async function LoginWithCode(
 	});
 }
 
-export async function VerifyOTP(
+export async function VerifyAuthCode(
 	{ config }: AuthenticateDeps,
 	{ ...args }: { id: string; code: string; otpPurpose: OtpPurpose },
 ) {

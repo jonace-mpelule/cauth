@@ -1,11 +1,11 @@
 import bcrypt from 'bcrypt';
 import type { Request, Response } from 'express';
-import type { _CAuth } from '@/core/src/cauth';
-import ErrorValues from '@/core/src/errors/errorValues';
-import { AuthModelSelect } from '@/core/src/types/auth.t';
-import type { CAuthOptions } from '@/core/src/types/config.t';
-import { RegisterSchema } from '@/core/src/types/dto-schemas.t';
-import { formatZodIssues } from '@/core/src/utils/zod-joined-issues';
+import type { _CAuth } from '@/core/src/cauth.ts';
+import ErrorValues from '@/core/src/errors/errorValues.ts';
+import { AuthModelSelect } from '@/core/src/types/auth.t.ts';
+import type { CAuthOptions } from '@/core/src/types/config.t.ts';
+import { RegisterSchema } from '@/core/src/types/dto-schemas.t.ts';
+import { formatZodIssues } from '@/core/src/utils/zod-joined-issues.ts';
 
 type RegisterDeps = {
 	config: CAuthOptions;

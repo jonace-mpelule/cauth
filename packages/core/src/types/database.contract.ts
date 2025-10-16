@@ -1,4 +1,4 @@
-import type { AuthModel, OtpType } from './auth.t.ts';
+import type { AuthModel } from './auth.t.ts';
 import type { CAuthOptions } from './config.t.ts';
 import type { OtpPurpose } from './otp-purpose.t.ts';
 
@@ -52,7 +52,7 @@ export interface DatabaseContract {
 
 	deleteAccount({ ...args }: { id: string }): Promise<void>;
 
-	createOTP<T = OtpType>(
+	createOTP<T = { code: string; purpose: string; expiresAt: Date }>(
 		{ config }: { config: CAuthOptions },
 		{
 			...args

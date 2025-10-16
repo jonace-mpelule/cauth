@@ -1,5 +1,1 @@
-import type { LooseAutocomplete } from './helpers.t.ts';
-
-export type OtpPurpose = LooseAutocomplete<
-	'LOGIN' | 'RESET_PASSWORD' | 'ACTION'
->;
+export type OtpPurpose = 'LOGIN' | 'RESET_PASSWORD' | 'ACTION';

@@ -2,27 +2,14 @@
   "name": "@cauth/express",
   "version": "0.0.1",
   "description": "",
-  "main": "./dist/index.cjs",             
-  "module": "./dist/index.js",            
-  "types": "./dist/index.d.ts",     
-  "type": "module",    
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.ts",     
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",    
-        "default": "./dist/index.cjs"     
-      }
-    }
-  },
- "scripts": {
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.cts",
+  "type": "module",
+  "scripts": {
     "build": "tsdown",
-    "patch": "npm version patch", 
+    "patch": "npm version patch",
     "minor": "npm version minor",
-    "major": "npm version major", 
+    "major": "npm version major",
     "publish": "npm publish"
   },
   "files": [
@@ -40,14 +27,16 @@
   "license": "MIT",
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.3",
     "@types/node": "^24.7.0",
     "tsdown": "^0.15.6",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "express": "^5.1.0"
-  }, 
+  },
   "engines": {
     "node": ">=18"
   }

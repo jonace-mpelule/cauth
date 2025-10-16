@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
-import ErrorValues from '@/core/src/errors/errorValues';
-import type { AuthGuardDeps } from '@/core/src/types/routes.contract.t';
-import { tryCatch } from '@/core/src/utils/tryCatch';
+import ErrorValues from '@/core/src/errors/errorValues.ts';
+import type { AuthGuardDeps } from '@/core/src/types/routes.contract.t.ts';
+import { tryCatch } from '@/core/src/utils/tryCatch.ts';
 
 /**
  * @description Implements Express Auth Middleware

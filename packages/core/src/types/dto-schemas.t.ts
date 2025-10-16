@@ -5,14 +5,14 @@ import { phoneWithLibSchema } from './phonenumber-schema.t.ts';
 
 const EmailLogin = z.object({
 	email: z.email(),
-	phoneNumber: z.never(),
-	password: z.string(),
+	phoneNumber: z.never().optional(),
+	password: z.string().min(6),
 });
 
 const PhoneLogin = z.object({
 	phoneNumber: phoneWithLibSchema,
 	email: z.never().optional(),
-	password: z.string(),
+	password: z.string().min(6),
 });
 
 export const LoginSchema = z
@@ -51,9 +51,7 @@ export type RegisterSchemaType = z.infer<typeof RegisterSchema>;
 
 // * REFRESH TOKEN DTO
 export const RefreshTokenSchema = z.object({
-	refreshToken: z.jwt({
-		message: 'refreshToken: should be a valid jwt string',
-	}),
+	refreshToken: z.string(),
 });
 
 export type RefreshTokenSchemaType = z.infer<typeof RefreshTokenSchema>;
@@ -61,7 +59,7 @@ export type RefreshTokenSchemaType = z.infer<typeof RefreshTokenSchema>;
 // * LOGOUT SCHEMA
 
 export const LogoutSchema = z.object({
-	refreshToken: z.jwt(),
+	refreshToken: z.string(),
 });
 
 export type LogoutSchemaType = z.infer<typeof LogoutSchema>;

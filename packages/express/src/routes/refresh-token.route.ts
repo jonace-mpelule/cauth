@@ -1,9 +1,10 @@
 import type { Request, Response } from 'express';
-import type { _CAuth } from '@/core/src/cauth';
-import ErrorValues from '@/core/src/errors/errorValues';
-import type { CAuthOptions } from '@/core/src/types/config.t';
-import { RefreshTokenSchema } from '@/core/src/types/dto-schemas.t';
-import { formatZodIssues } from '@/core/src/utils/zod-joined-issues';
+import type { _CAuth } from '@/core/src/cauth.ts';
+import ErrorValues from '@/core/src/errors/errorValues.ts';
+import type { CAuthOptions } from '@/core/src/types/config.t.ts';
+import { RefreshTokenSchema } from '@/core/src/types/dto-schemas.t.ts';
+import { tryCatch } from '@/core/src/utils/tryCatch.ts';
+import { formatZodIssues } from '@/core/src/utils/zod-joined-issues.ts';
 
 type RefreshDeps = {
 	config: CAuthOptions;
@@ -23,15 +24,17 @@ export function RefreshRoute({ config, tokens }: RefreshDeps) {
 			const { refreshToken } = out.data;
 
 			// VERIFY TOKEN
-			const payload = await tokens.VerifyRefreshToken<{ id: string }>(
-				refreshToken,
+			const payload = await tryCatch(
+				tokens.VerifyRefreshToken<{ id: string }>(refreshToken),
 			);
-			if (!payload)
+
+			if (payload.error || !payload.data)
 				return res.status(401).send({ code: ErrorValues.InvalidToken });
 
 			const account = await config.dbContractor.findAccountById({
-				id: payload.id,
+				id: payload.data.id,
 			});
+
 			if (!account) {
 				return res.status(404).send({ code: ErrorValues.AccountNotFound });
 			}

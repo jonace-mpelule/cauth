@@ -1,3 +1,8 @@
+import {
+	LoginWithCode,
+	RequestAuthCode,
+	VerifyAuthCode,
+} from './fn/authenticate.fn.ts';
 import { ChangePasswordFn } from './fn/change-password.fn.ts';
 import { LoginFn } from './fn/login.fn.ts';
 import { LogoutFn } from './fn/logout.fn.ts';
@@ -13,6 +18,7 @@ import type {
 	RefreshTokenSchemaType,
 	RegisterSchemaType,
 } from './types/dto-schemas.t.ts';
+import type { OtpPurpose } from './types/otp-purpose.t.ts';
 
 export class _CAuth<T extends string[]> {
 	#config: Omit<CAuthOptions, 'roles'> & { roles: T };
@@ -94,6 +100,30 @@ export class _CAuth<T extends string[]> {
 
 		ChangePassword: ({ ...args }: ChangePasswordSchemaType) =>
 			ChangePasswordFn({ config: this.#config, tokens: this.Tokens }, args),
+
+		RequestOTPCode: ({
+			...args
+		}: Omit<LoginSchemaType, 'password'> & {
+			password?: string;
+			usePassword?: boolean;
+			otpPurpose: OtpPurpose;
+		}) => RequestAuthCode({ config: this.#config, tokens: this.Tokens }, args),
+
+		LoginWithOTP: ({
+			...args
+		}: Omit<LoginSchemaType, 'password'> & {
+			code: string;
+		}) =>
+			LoginWithCode({ config: this.#config, tokens: this.Tokens }, { ...args }),
+
+		VerifyOTP: ({
+			...args
+		}: {
+			id: string;
+			code: string;
+			otpPurpose: OtpPurpose;
+		}): Promise<{ isValid: boolean }> =>
+			VerifyAuthCode({ config: this.#config, tokens: this.Tokens }, args),
 	};
 
 	public Tokens = {

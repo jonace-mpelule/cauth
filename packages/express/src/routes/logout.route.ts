@@ -1,9 +1,10 @@
 import type { Request, Response } from 'express';
-import type { _CAuth } from '@/core/src/cauth';
-import ErrorValues from '@/core/src/errors/errorValues';
-import type { CAuthOptions } from '@/core/src/types/config.t';
-import { LogoutSchema } from '@/core/src/types/dto-schemas.t';
-import { formatZodIssues } from '@/core/src/utils/zod-joined-issues';
+import type { _CAuth } from '@/core/src/cauth.ts';
+import ErrorValues from '@/core/src/errors/errorValues.ts';
+import type { CAuthOptions } from '@/core/src/types/config.t.ts';
+import { LogoutSchema } from '@/core/src/types/dto-schemas.t.ts';
+import { tryCatch } from '@/core/src/utils/tryCatch.ts';
+import { formatZodIssues } from '@/core/src/utils/zod-joined-issues.ts';
 
 type LogoutDeps = {
 	config: CAuthOptions;
@@ -24,16 +25,16 @@ export function LogoutRoute({ config, tokens }: LogoutDeps) {
 
 			const { refreshToken } = out.data;
 
-			const payload = await tokens.VerifyRefreshToken<{ id: string }>(
-				refreshToken,
+			const payload = await tryCatch(
+				tokens.VerifyRefreshToken<{ id: string }>(refreshToken),
 			);
 
-			if (!payload) {
+			if (payload.error || !payload.data) {
 				return res.status(401).send({ code: 'invalid-refresh-token' });
 			}
 
 			await config.dbContractor.removeAndAddRefreshToken({
-				id: payload.id,
+				id: payload.data.id,
 				refreshToken: refreshToken,
 			});
 
