@@ -3,11 +3,20 @@ import type { DatabaseContract } from '@core/types/database.contract.ts';
 import bcrypt from 'bcrypt';
 import type { AuthModel } from '@/core/src/types/auth.t.ts';
 import type { OtpPurpose } from '@/core/src/types/otp-purpose.t.ts';
-import type { PrismaClient } from './generated/prisma/index.d.ts';
 
-export class PrismaContractor implements DatabaseContract {
-	#client: PrismaClient;
-	constructor(private client: PrismaClient) {
+export interface PrismaClientLike {
+	$connect: () => Promise<void>;
+	$disconnect: () => Promise<void>;
+	$transaction: (...args: any[]) => Promise<any>;
+	[model: string]: any;
+}
+
+export class PrismaContractor<TClient extends PrismaClientLike>
+	implements DatabaseContract
+{
+	#client: TClient;
+
+	constructor(client: TClient) {
 		this.#client = client;
 	}
 
