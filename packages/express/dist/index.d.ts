@@ -1,5 +1,5 @@
 import "./express-BgF1jv36.js";
-import * as express0 from "express";
+import { RequestHandler } from "express";
 import z$1, { z } from "zod";
 import ms from "ms";
 
@@ -127,7 +127,7 @@ interface DatabaseContract {
 //#region ../core/src/types/config.t.d.ts
 declare const CAuthOptionsSchema: z$1.ZodObject<{
   dbContractor: z$1.ZodCustom<DatabaseContract, DatabaseContract>;
-  routeContractor: z$1.ZodCustom<RoutesContract, RoutesContract>;
+  routeContractor: z$1.ZodCustom<RoutesContract<(...args: any[]) => any>, RoutesContract<(...args: any[]) => any>>;
   roles: z$1.ZodArray<z$1.ZodString>;
   jwtConfig: z$1.ZodObject<{
     refreshTokenSecret: z$1.ZodString;
@@ -189,13 +189,13 @@ declare class _CAuth<T extends string[]> {
    *
    * @default undefined
    */
-  Guard: (roles?: Array<T[number]>) => any;
+  Guard: (roles?: Array<T[number]>) => (...args: any[]) => any;
   Routes: {
-    Register: () => any;
-    Login: () => any;
-    Logout: () => any;
-    Refresh: () => any;
-    ChangePassword: (userId: string) => any;
+    Register: () => (...args: any[]) => any;
+    Login: () => (...args: any[]) => any;
+    Logout: () => (...args: any[]) => any;
+    Refresh: () => (...args: any[]) => any;
+    ChangePassword: (userId: string) => (...args: any[]) => any;
   };
   FN: {
     Login: ({
@@ -272,59 +272,63 @@ type AuthGuardDeps = {
   tokens: _CAuth<any>['Tokens'];
   roles?: Array<string>;
 };
-interface RoutesContract {
+/**
+ * Generic RoutesContract
+ * THandler is generic, defaults to any function
+ */
+interface RoutesContract<THandler extends (...args: any[]) => any = (...args: any[]) => any> {
   Login({
     ...config
-  }: RouteDeps): any;
+  }: RouteDeps): THandler;
   Register({
     ...config
-  }: RouteDeps): any;
+  }: RouteDeps): THandler;
   Logout({
     ...config
-  }: RouteDeps): any;
+  }: RouteDeps): THandler;
   Guard({
     ...config
-  }: AuthGuardDeps): any;
+  }: AuthGuardDeps): THandler;
   Refresh({
     ...config
-  }: AuthGuardDeps): any;
+  }: AuthGuardDeps): THandler;
   ChangePassword({
     ...config
   }: RouteDeps & {
     userId: string;
-  }): any;
+  }): THandler;
 }
 //#endregion
 //#region src/express.contractor.d.ts
-declare class ExpressContractor implements RoutesContract {
+declare class ExpressContractor<THandler extends (...args: any[]) => any = RequestHandler> implements RoutesContract<THandler> {
   Register: ({
     config,
     tokens
-  }: RouteDeps) => (req: express0.Request, res: express0.Response) => Promise<express0.Response<any, Record<string, any>>>;
+  }: RouteDeps) => THandler;
   Login: ({
     config,
     tokens
-  }: RouteDeps) => (req: express0.Request, res: express0.Response) => Promise<express0.Response<any, Record<string, any>>>;
+  }: RouteDeps) => THandler;
   Logout: ({
     config,
     tokens
-  }: RouteDeps) => (req: express0.Request, res: express0.Response) => Promise<express0.Response<any, Record<string, any>>>;
+  }: RouteDeps) => THandler;
   Refresh: ({
     config,
     tokens
-  }: RouteDeps) => (req: express0.Request, res: express0.Response) => Promise<express0.Response<any, Record<string, any>>>;
+  }: RouteDeps) => THandler;
   ChangePassword: ({
     config,
     tokens,
     userId
   }: RouteDeps & {
     userId: string;
-  }) => (req: express0.Request, res: express0.Response) => Promise<express0.Response<any, Record<string, any>>>;
+  }) => THandler;
   Guard: ({
     config,
     tokens,
     roles
-  }: AuthGuardDeps) => (req: express0.Request, res: express0.Response, next: express0.NextFunction) => Promise<void | express0.Response<any, Record<string, any>>>;
+  }: AuthGuardDeps) => THandler;
 }
 //#endregion
 export { ExpressContractor };

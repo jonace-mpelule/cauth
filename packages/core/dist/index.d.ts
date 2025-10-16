@@ -194,33 +194,37 @@ type AuthGuardDeps = {
   tokens: _CAuth<any>['Tokens'];
   roles?: Array<string>;
 };
-interface RoutesContract {
+/**
+ * Generic RoutesContract
+ * THandler is generic, defaults to any function
+ */
+interface RoutesContract<THandler extends (...args: any[]) => any = (...args: any[]) => any> {
   Login({
     ...config
-  }: RouteDeps): any;
+  }: RouteDeps): THandler;
   Register({
     ...config
-  }: RouteDeps): any;
+  }: RouteDeps): THandler;
   Logout({
     ...config
-  }: RouteDeps): any;
+  }: RouteDeps): THandler;
   Guard({
     ...config
-  }: AuthGuardDeps): any;
+  }: AuthGuardDeps): THandler;
   Refresh({
     ...config
-  }: AuthGuardDeps): any;
+  }: AuthGuardDeps): THandler;
   ChangePassword({
     ...config
   }: RouteDeps & {
     userId: string;
-  }): any;
+  }): THandler;
 }
 //#endregion
 //#region src/types/config.t.d.ts
 declare const CAuthOptionsSchema: z$1.ZodObject<{
   dbContractor: z$1.ZodCustom<DatabaseContract, DatabaseContract>;
-  routeContractor: z$1.ZodCustom<RoutesContract, RoutesContract>;
+  routeContractor: z$1.ZodCustom<RoutesContract<(...args: any[]) => any>, RoutesContract<(...args: any[]) => any>>;
   roles: z$1.ZodArray<z$1.ZodString>;
   jwtConfig: z$1.ZodObject<{
     refreshTokenSecret: z$1.ZodString;
@@ -282,13 +286,13 @@ declare class _CAuth<T extends string[]> {
    *
    * @default undefined
    */
-  Guard: (roles?: Array<T[number]>) => any;
+  Guard: (roles?: Array<T[number]>) => (...args: any[]) => any;
   Routes: {
-    Register: () => any;
-    Login: () => any;
-    Logout: () => any;
-    Refresh: () => any;
-    ChangePassword: (userId: string) => any;
+    Register: () => (...args: any[]) => any;
+    Login: () => (...args: any[]) => any;
+    Logout: () => (...args: any[]) => any;
+    Refresh: () => (...args: any[]) => any;
+    ChangePassword: (userId: string) => (...args: any[]) => any;
   };
   FN: {
     Login: ({
