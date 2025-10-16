@@ -1,5 +1,5 @@
 import "./express-BgF1jv36.js";
-import { RequestHandler } from "express";
+import { NextFunction, Request, Response } from "express";
 import z$1, { z } from "zod";
 import ms from "ms";
 
@@ -176,55 +176,44 @@ declare const ChangePasswordSchema: z.ZodObject<{
 type ChangePasswordSchemaType = z.infer<typeof ChangePasswordSchema>;
 //#endregion
 //#region ../core/src/cauth.d.ts
-declare class _CAuth<T extends string[]> {
+declare class _CAuth<T extends string[], TContractor extends RoutesContract<any> = RoutesContract<any>> {
   #private;
   constructor(config: Omit<CAuthOptions, 'roles'> & {
     roles: T;
+    routeContractor: TContractor;
   });
   get RoleType(): T[number];
   /**
-   * @description Authentication Guard Middleware. Include 'roles' for a custom auth guard.
-   *
-   * If 'roles' is empty it allows all authenticated users, without respecting specific role
-   *
-   * @default undefined
+   * @description Auth guard middleware — roles optional.
+   * Automatically typed as the handler type from the contractor (e.g. Express.RequestHandler).
    */
   Guard: (roles?: Array<T[number]>) => (...args: any[]) => any;
+  /**
+   * Route Handlers — typed from the contractor automatically.
+   */
   Routes: {
-    Register: () => (...args: any[]) => any;
-    Login: () => (...args: any[]) => any;
-    Logout: () => (...args: any[]) => any;
-    Refresh: () => (...args: any[]) => any;
-    ChangePassword: (userId: string) => (...args: any[]) => any;
+    Register: () => ReturnType<TContractor["Register"]>;
+    Login: () => ReturnType<TContractor["Login"]>;
+    Logout: () => ReturnType<TContractor["Logout"]>;
+    Refresh: () => ReturnType<TContractor["Refresh"]>;
+    ChangePassword: (userId: string) => ReturnType<TContractor["ChangePassword"]>;
   };
   FN: {
-    Login: ({
-      ...args
-    }: LoginSchemaType) => Promise<Result$1<{
+    Login: (args: LoginSchemaType) => Promise<Result$1<{
       account: Account;
       tokens: Tokens;
     }>>;
-    Register: ({
-      ...args
-    }: RegisterSchemaType) => Promise<Result<{
+    Register: (args: RegisterSchemaType) => Promise<Result<{
       account: Account;
       tokens: Tokens;
     }>>;
-    Logout: ({
-      ...args
-    }: LogoutSchemaType) => Promise<Result<any>>;
-    Refresh: ({
-      ...args
-    }: RefreshTokenSchemaType) => Promise<Result$1<{
+    Logout: (args: LogoutSchemaType) => Promise<Result<any>>;
+    Refresh: (args: RefreshTokenSchemaType) => Promise<Result$1<{
       account: Account;
       tokens: Tokens;
     }>>;
-    ChangePassword: ({
-      ...args
-    }: ChangePasswordSchemaType) => Promise<Result<unknown>>;
-    RequestOTPCode: ({
-      ...args
-    }: Omit<LoginSchemaType, "password"> & {
+    ChangePassword: (args: ChangePasswordSchemaType) => Promise<Result<unknown>>;
+    RequestOTPCode: (args: Omit<LoginSchemaType, "password"> & {
       password?: string;
       usePassword?: boolean;
       otpPurpose: OtpPurpose;
@@ -232,17 +221,13 @@ declare class _CAuth<T extends string[]> {
       id: string;
       code: string;
     }>>;
-    LoginWithOTP: ({
-      ...args
-    }: Omit<LoginSchemaType, "password"> & {
+    LoginWithOTP: (args: Omit<LoginSchemaType, "password"> & {
       code: string;
     }) => Promise<Result<{
       account: Account;
       tokens: Tokens;
     }>>;
-    VerifyOTP: ({
-      ...args
-    }: {
+    VerifyOTP: (args: {
       id: string;
       code: string;
       otpPurpose: OtpPurpose;
@@ -257,8 +242,8 @@ declare class _CAuth<T extends string[]> {
       accessToken: string;
       refreshToken: string;
     }>;
-    VerifyRefreshToken: <T_1>(token: any) => Promise<T_1 | null>;
-    VerifyAccessToken: <T_1>(token: any) => Promise<T_1 | null>;
+    VerifyRefreshToken: <R>(token: any) => Promise<R | null>;
+    VerifyAccessToken: <R>(token: any) => Promise<R | null>;
   };
 }
 //#endregion
@@ -300,7 +285,8 @@ interface RoutesContract<THandler extends (...args: any[]) => any = (...args: an
 }
 //#endregion
 //#region src/express.contractor.d.ts
-declare class ExpressContractor<THandler extends (...args: any[]) => any = RequestHandler> implements RoutesContract<THandler> {
+type OptionalNextHandler = (req: Request, res: Response, next?: NextFunction) => any;
+declare class ExpressContractor<THandler extends (...args: any[]) => any = OptionalNextHandler> implements RoutesContract<THandler> {
   Register: ({
     config,
     tokens

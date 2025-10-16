@@ -1,4 +1,4 @@
-import type { RequestHandler } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import type {
 	AuthGuardDeps,
 	RouteDeps,
@@ -11,8 +11,14 @@ import { LogoutRoute } from './routes/logout.route.ts';
 import { RefreshRoute } from './routes/refresh-token.route.ts';
 import { RegisterRoute } from './routes/register.route.ts';
 
+export type OptionalNextHandler = (
+	req: Request,
+	res: Response,
+	next?: NextFunction,
+) => any;
+
 export class ExpressContractor<
-	THandler extends (...args: any[]) => any = RequestHandler,
+	THandler extends (...args: any[]) => any = OptionalNextHandler,
 > implements RoutesContract<THandler>
 {
 	Register = ({ config, tokens }: RouteDeps) =>
