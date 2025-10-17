@@ -11,23 +11,27 @@ import {
 } from '@errors/errors.ts';
 import { formatZodIssues } from '@utils/zod-joined-issues.ts';
 import bcrypt from 'bcrypt';
-import { fail, ok, type Result } from '@/core/src/types/result.t.ts';
 import type { Account, Tokens } from '../types/auth.t.ts';
+import { fail, ok, type Result } from '../types/result.t.ts';
 
 type RegisterDeps = {
 	config: CAuthOptions;
 	tokens: _CAuth<any>['Tokens'];
 };
 
-type RefreshSuccess = {
+type RegisterFNResult = {
 	account: Account;
 	tokens: Tokens;
 };
 
 export async function RegisterFn(
 	{ config, tokens }: RegisterDeps,
-	{ ...args }: RegisterSchemaType,
-): Promise<Result<RefreshSuccess>> {
+	{
+		...args
+	}: RegisterSchemaType & {
+		role: _CAuth<any>['RoleType'];
+	},
+): Promise<Result<RegisterFNResult>> {
 	const out = RegisterSchema.safeParse(args);
 	if (!out.success) {
 		return fail({

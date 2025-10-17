@@ -11,7 +11,7 @@ import {
 } from '@errors/errors.ts';
 import { formatZodIssues } from '@utils/zod-joined-issues.ts';
 import bcrypt from 'bcrypt';
-import { fail, ok, type Result } from '@/core/src/types/result.t.ts';
+import { fail, ok, type Result } from '../types/result.t.ts';
 
 type ChangePasswordDeps = {
 	config: CAuthOptions;

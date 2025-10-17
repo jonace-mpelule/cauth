@@ -100,7 +100,7 @@ type FNError = {
  * @template T - The type of the value.
  * @template E - The type of the errors, which must extend { type: string; error: Error }.
  */
-type Result$1<T, E extends FNError = FNError> = {
+type Result<T, E extends FNError = FNError> = {
   success: true;
   value: T;
 } | {
@@ -298,7 +298,7 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
   FN: {
     Login: ({
       ...args
-    }: LoginSchemaType) => Promise<Result$1<{
+    }: LoginSchemaType) => Promise<Result<{
       account: Account;
       tokens: Tokens;
     }>>;
@@ -310,10 +310,10 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
     }>>;
     Logout: ({
       ...args
-    }: LogoutSchemaType) => Promise<Result<any>>;
+    }: LogoutSchemaType) => Promise<Result<unknown>>;
     Refresh: ({
       ...args
-    }: RefreshTokenSchemaType) => Promise<Result$1<{
+    }: RefreshTokenSchemaType) => Promise<Result<{
       account: Account;
       tokens: Tokens;
     }>>;
@@ -326,13 +326,13 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
       password?: string;
       usePassword?: boolean;
       otpPurpose: OtpPurpose;
-    }) => Promise<Result$1<{
+    }) => Promise<Result<{
       id: string;
       code: string;
     }>>;
     LoginWithOTP: (args: Omit<LoginSchemaType, "password"> & {
       code: string;
-    }) => Promise<Result$1<{
+    }) => Promise<Result<{
       account: Account;
       tokens: Tokens;
     }>>;
@@ -340,7 +340,7 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
       id: string;
       code: string;
       otpPurpose: OtpPurpose;
-    }) => Promise<Result$1<{
+    }) => Promise<Result<{
       isValid: boolean;
     }>>;
   };

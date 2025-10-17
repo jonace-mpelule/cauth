@@ -4,8 +4,8 @@
 
 // })
 
-// const loginResult = await s.FN.LoginWithOTP({ ...args })
+// const loginResult = await s.FN.ChangePassword({ ...args })
 
-// if(loginResult.success) {
+// // if(loginResult.success) {
 
-// }
+// // }

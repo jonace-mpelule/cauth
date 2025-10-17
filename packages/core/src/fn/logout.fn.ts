@@ -1,16 +1,16 @@
 import type { _CAuth } from '@core/cauth.ts';
 import {
-	InvalidDataError,
-	InvalidRefreshTokenError,
-} from '@core/errors/errors.ts';
-import type { CAuthOptions } from '@core/types/config.t.ts';
-import {
 	LogoutSchema,
 	type LogoutSchemaType,
 } from '@core/types/dto-schemas.t.ts';
 import { tryCatch } from '@core/utils/tryCatch.ts';
 import { formatZodIssues } from '@core/utils/zod-joined-issues.ts';
-import { fail, ok, type Result } from '@/core/src/types/result.t.ts';
+import {
+	InvalidDataError,
+	InvalidRefreshTokenError,
+} from '../errors/errors.ts';
+import type { CAuthOptions } from '../types/config.t.ts';
+import { fail, ok, type Result } from '../types/result.t.ts';
 
 type LogoutDeps = {
 	config: CAuthOptions;
@@ -20,7 +20,7 @@ type LogoutDeps = {
 export async function LogoutFn(
 	{ config, tokens }: LogoutDeps,
 	{ ...args }: LogoutSchemaType,
-): Promise<Result<any>> {
+): Promise<Result<unknown>> {
 	const out = LogoutSchema.safeParse(args);
 
 	if (!out.success) {
