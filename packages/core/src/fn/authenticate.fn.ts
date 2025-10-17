@@ -12,9 +12,9 @@ import {
 } from '@errors/errors.ts';
 import { formatZodIssues } from '@utils/zod-joined-issues.ts';
 import bcrypt from 'bcrypt';
-import { fail, ok, type Result } from '@/core/src/types/result.t.ts';
 import type { Account, Tokens } from '../types/auth.t.ts';
 import type { OtpPurpose } from '../types/otp-purpose.t.ts';
+import { fail, ok, type Result } from '../types/result.t.ts';
 
 // Common Dep
 type AuthenticateDeps = {
@@ -22,7 +22,7 @@ type AuthenticateDeps = {
 	tokens: _CAuth<any>['Tokens'];
 };
 
-export type AuthCodeResult = {
+type AuthCodeResult = {
 	id: string;
 	code: string;
 };
@@ -91,7 +91,7 @@ export async function RequestAuthCode(
 	});
 }
 
-export type LoginWithCodeResult = {
+type LoginWithCodeResult = {
 	account: Account;
 	tokens: Tokens;
 };
@@ -157,7 +157,7 @@ export async function LoginWithCode(
 	});
 }
 
-export type VerifyAuthCodeResult = {
+type VerifyAuthCodeResult = {
 	isValid: boolean;
 };
 

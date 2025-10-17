@@ -272,19 +272,6 @@ declare const ChangePasswordSchema: z.ZodObject<{
 }, z.core.$strip>;
 type ChangePasswordSchemaType = z.infer<typeof ChangePasswordSchema>;
 //#endregion
-//#region src/fn/authenticate.fn.d.ts
-type AuthCodeResult = {
-  id: string;
-  code: string;
-};
-type LoginWithCodeResult = {
-  account: Account;
-  tokens: Tokens;
-};
-type VerifyAuthCodeResult = {
-  isValid: boolean;
-};
-//#endregion
 //#region src/cauth.d.ts
 declare class _CAuth<T extends string[], TContractor extends RoutesContract<any> = RoutesContract<any>> {
   #private;
@@ -339,15 +326,23 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
       password?: string;
       usePassword?: boolean;
       otpPurpose: OtpPurpose;
-    }) => Promise<Result<AuthCodeResult>>;
+    }) => Promise<Result$1<{
+      id: string;
+      code: string;
+    }>>;
     LoginWithOTP: (args: Omit<LoginSchemaType, "password"> & {
       code: string;
-    }) => Promise<Result<LoginWithCodeResult>>;
+    }) => Promise<Result$1<{
+      account: Account;
+      tokens: Tokens;
+    }>>;
     VerifyOTP: (args: {
       id: string;
       code: string;
       otpPurpose: OtpPurpose;
-    }) => Promise<Result<VerifyAuthCodeResult>>;
+    }) => Promise<Result$1<{
+      isValid: boolean;
+    }>>;
   };
   Tokens: {
     GenerateRefreshToken: (payload: any) => Promise<string>;
