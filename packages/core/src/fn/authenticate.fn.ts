@@ -16,28 +16,27 @@ import { fail, ok, type Result } from '@/core/src/types/result.t.ts';
 import type { Account, Tokens } from '../types/auth.t.ts';
 import type { OtpPurpose } from '../types/otp-purpose.t.ts';
 
+// Common Dep
 type AuthenticateDeps = {
 	config: CAuthOptions;
 	tokens: _CAuth<any>['Tokens'];
 };
 
-type RequestAuthCode = {
+export type AuthCodeResult = {
 	id: string;
 	code: string;
 };
 
 export async function RequestAuthCode(
 	{ config }: AuthenticateDeps,
-	{
-		...args
-	}: Omit<LoginSchemaType, 'password'> & {
+	args: Omit<LoginSchemaType, 'password'> & {
 		email?: string;
 		phoneNumber?: string;
 		password?: string;
 		usePassword?: boolean;
 		otpPurpose: OtpPurpose;
 	},
-): Promise<Result<RequestAuthCode>> {
+): Promise<Result<AuthCodeResult>> {
 	const out = LoginSchema.safeParse({
 		email: args.email,
 		phoneNumber: args.phoneNumber,
@@ -63,7 +62,7 @@ export async function RequestAuthCode(
 		});
 	}
 
-	// * Use Password When 'usePassword' is set to true
+	// Optional password check
 	if (args.usePassword) {
 		const passwordMatch = await bcrypt.compare(
 			String(args.password),
@@ -78,10 +77,8 @@ export async function RequestAuthCode(
 		}
 	}
 
-	const Otp = await config.dbContractor.createOTP(
-		{
-			config,
-		},
+	const otp = await config.dbContractor.createOTP(
+		{ config },
 		{
 			id: account.id,
 			purpose: args.otpPurpose,
@@ -90,23 +87,19 @@ export async function RequestAuthCode(
 
 	return ok({
 		id: account.id,
-		code: Otp.code,
+		code: otp.code,
 	});
 }
 
-type LoginSuccess = {
+export type LoginWithCodeResult = {
 	account: Account;
 	tokens: Tokens;
 };
 
 export async function LoginWithCode(
 	{ config, tokens }: AuthenticateDeps,
-	{
-		...args
-	}: Omit<LoginSchemaType, 'password'> & {
-		code: string;
-	},
-): Promise<Result<LoginSuccess>> {
+	args: Omit<LoginSchemaType, 'password'> & { code: string },
+): Promise<Result<LoginWithCodeResult>> {
 	const out = LoginSchema.safeParse({
 		email: args.email,
 		phoneNumber: args.phoneNumber,
@@ -164,13 +157,19 @@ export async function LoginWithCode(
 	});
 }
 
+export type VerifyAuthCodeResult = {
+	isValid: boolean;
+};
+
 export async function VerifyAuthCode(
 	{ config }: AuthenticateDeps,
-	{ ...args }: { id: string; code: string; otpPurpose: OtpPurpose },
-) {
-	return await config.dbContractor.verifyOTP({
+	args: { id: string; code: string; otpPurpose: OtpPurpose },
+): Promise<Result<VerifyAuthCodeResult>> {
+	const result = await config.dbContractor.verifyOTP({
 		id: args.id,
 		code: args.code,
 		purpose: args.otpPurpose,
 	});
+
+	return ok({ isValid: result.isValid });
 }

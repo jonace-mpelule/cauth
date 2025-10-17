@@ -272,6 +272,19 @@ declare const ChangePasswordSchema: z.ZodObject<{
 }, z.core.$strip>;
 type ChangePasswordSchemaType = z.infer<typeof ChangePasswordSchema>;
 //#endregion
+//#region src/fn/authenticate.fn.d.ts
+type AuthCodeResult = {
+  id: string;
+  code: string;
+};
+type LoginWithCodeResult = {
+  account: Account;
+  tokens: Tokens;
+};
+type VerifyAuthCodeResult = {
+  isValid: boolean;
+};
+//#endregion
 //#region src/cauth.d.ts
 declare class _CAuth<T extends string[], TContractor extends RoutesContract<any> = RoutesContract<any>> {
   #private;
@@ -296,41 +309,45 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
     ChangePassword: (userId: string) => ReturnType<TContractor["ChangePassword"]>;
   };
   FN: {
-    Login: (args: LoginSchemaType) => Promise<Result$1<{
+    Login: ({
+      ...args
+    }: LoginSchemaType) => Promise<Result$1<{
       account: Account;
       tokens: Tokens;
     }>>;
-    Register: (args: RegisterSchemaType) => Promise<Result<{
+    Register: ({
+      ...args
+    }: RegisterSchemaType) => Promise<Result<{
       account: Account;
       tokens: Tokens;
     }>>;
-    Logout: (args: LogoutSchemaType) => Promise<Result<any>>;
-    Refresh: (args: RefreshTokenSchemaType) => Promise<Result$1<{
+    Logout: ({
+      ...args
+    }: LogoutSchemaType) => Promise<Result<any>>;
+    Refresh: ({
+      ...args
+    }: RefreshTokenSchemaType) => Promise<Result$1<{
       account: Account;
       tokens: Tokens;
     }>>;
-    ChangePassword: (args: ChangePasswordSchemaType) => Promise<Result<unknown>>;
-    RequestOTPCode: (args: Omit<LoginSchemaType, "password"> & {
+    ChangePassword: ({
+      ...args
+    }: ChangePasswordSchemaType) => Promise<Result<unknown>>;
+    RequestOTPCode: ({
+      ...args
+    }: Omit<LoginSchemaType, "password"> & {
       password?: string;
       usePassword?: boolean;
       otpPurpose: OtpPurpose;
-    }) => Promise<Result<{
-      id: string;
-      code: string;
-    }>>;
+    }) => Promise<Result<AuthCodeResult>>;
     LoginWithOTP: (args: Omit<LoginSchemaType, "password"> & {
       code: string;
-    }) => Promise<Result<{
-      account: Account;
-      tokens: Tokens;
-    }>>;
+    }) => Promise<Result<LoginWithCodeResult>>;
     VerifyOTP: (args: {
       id: string;
       code: string;
       otpPurpose: OtpPurpose;
-    }) => Promise<{
-      isValid: boolean;
-    }>;
+    }) => Promise<Result<VerifyAuthCodeResult>>;
   };
   Tokens: {
     GenerateRefreshToken: (payload: any) => Promise<string>;
