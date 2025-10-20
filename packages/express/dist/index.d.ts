@@ -1,4 +1,3 @@
-import "./express-BgF1jv36.js";
 import { NextFunction, Request, Response } from "express";
 import z$1, { z } from "zod";
 import ms from "ms";
@@ -40,7 +39,7 @@ type FNError = {
  * @template T - The type of the value.
  * @template E - The type of the errors, which must extend { type: string; error: Error }.
  */
-type Result$1<T, E extends FNError = FNError> = {
+type Result<T, E extends FNError = FNError> = {
   success: true;
   value: T;
 } | {
@@ -199,21 +198,33 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
     ChangePassword: (userId: string) => ReturnType<TContractor["ChangePassword"]>;
   };
   FN: {
-    Login: (args: LoginSchemaType) => Promise<Result$1<{
+    Login: ({
+      ...args
+    }: LoginSchemaType) => Promise<Result<{
       account: Account;
       tokens: Tokens;
     }>>;
-    Register: (args: RegisterSchemaType) => Promise<Result<{
+    Register: ({
+      ...args
+    }: RegisterSchemaType) => Promise<Result<{
       account: Account;
       tokens: Tokens;
     }>>;
-    Logout: (args: LogoutSchemaType) => Promise<Result<any>>;
-    Refresh: (args: RefreshTokenSchemaType) => Promise<Result$1<{
+    Logout: ({
+      ...args
+    }: LogoutSchemaType) => Promise<Result<unknown>>;
+    Refresh: ({
+      ...args
+    }: RefreshTokenSchemaType) => Promise<Result<{
       account: Account;
       tokens: Tokens;
     }>>;
-    ChangePassword: (args: ChangePasswordSchemaType) => Promise<Result<unknown>>;
-    RequestOTPCode: (args: Omit<LoginSchemaType, "password"> & {
+    ChangePassword: ({
+      ...args
+    }: ChangePasswordSchemaType) => Promise<Result<unknown>>;
+    RequestOTPCode: ({
+      ...args
+    }: Omit<LoginSchemaType, "password"> & {
       password?: string;
       usePassword?: boolean;
       otpPurpose: OtpPurpose;
@@ -231,9 +242,9 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
       id: string;
       code: string;
       otpPurpose: OtpPurpose;
-    }) => Promise<{
+    }) => Promise<Result<{
       isValid: boolean;
-    }>;
+    }>>;
   };
   Tokens: {
     GenerateRefreshToken: (payload: any) => Promise<string>;
