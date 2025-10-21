@@ -40,7 +40,6 @@ export async function RequestAuthCode(
 	const out = LoginSchema.safeParse({
 		email: args.email,
 		phoneNumber: args.phoneNumber,
-		password: '',
 	});
 
 	if (!out.success) {
@@ -103,7 +102,6 @@ export async function LoginWithCode(
 	const out = LoginSchema.safeParse({
 		email: args.email,
 		phoneNumber: args.phoneNumber,
-		password: '',
 	});
 
 	if (!out.success) {
