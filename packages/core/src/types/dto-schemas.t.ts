@@ -6,13 +6,13 @@ import { phoneWithLibSchema } from './phonenumber-schema.t.ts';
 const EmailLogin = z.object({
 	email: z.email(),
 	phoneNumber: z.never().optional(),
-	password: z.string().min(6),
+	password: z.string().min(6).optional(),
 });
 
 const PhoneLogin = z.object({
 	phoneNumber: phoneWithLibSchema,
 	email: z.never().optional(),
-	password: z.string().min(6),
+	password: z.string().min(6).optional(),
 });
 
 export const LoginSchema = z
@@ -34,7 +34,7 @@ const Register = z.object({
 	phoneNumber: phoneWithLibSchema.optional(),
 	email: z.email().optional(),
 	role: z.string(),
-	password: z.string(),
+	password: z.string().optional(),
 });
 
 export const RegisterSchema = Register.superRefine((data, ctx) => {

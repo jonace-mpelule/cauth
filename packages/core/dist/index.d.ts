@@ -243,18 +243,18 @@ type CAuthOptions = z$1.infer<typeof CAuthOptionsSchema>;
 declare const LoginSchema: z.ZodUnion<readonly [z.ZodObject<{
   email: z.ZodEmail;
   phoneNumber: z.ZodOptional<z.ZodNever>;
-  password: z.ZodString;
+  password: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>, z.ZodObject<{
   phoneNumber: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
   email: z.ZodOptional<z.ZodNever>;
-  password: z.ZodString;
+  password: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>]>;
 type LoginSchemaType = z.infer<typeof LoginSchema>;
 declare const RegisterSchema: z.ZodObject<{
   phoneNumber: z.ZodOptional<z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>>;
   email: z.ZodOptional<z.ZodEmail>;
   role: z.ZodString;
-  password: z.ZodString;
+  password: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 type RegisterSchemaType = z.infer<typeof RegisterSchema>;
 declare const RefreshTokenSchema: z.ZodObject<{
