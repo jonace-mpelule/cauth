@@ -33,13 +33,13 @@ export type LoginSchemaType = z.infer<typeof LoginSchema>;
 /** Login With Code */
 const OTPCodePhone = z.object({
 	phoneNumber: phoneWithLibSchema,
-	email: z.never(),
+	email: z.never().optional(),
 	code: z.string().min(4).max(8),
 });
 
 const OTPCodeEmail = z.object({
 	email: z.email(),
-	phoneNumber: z.never(),
+	phoneNumber: z.never().optional(),
 	code: z.string().min(4).max(8),
 });
 

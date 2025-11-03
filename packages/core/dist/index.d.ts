@@ -248,11 +248,11 @@ declare const LoginSchema: z.ZodUnion<readonly [z.ZodObject<{
 type LoginSchemaType = z.infer<typeof LoginSchema>;
 declare const OTPCodeUnion: z.ZodUnion<readonly [z.ZodObject<{
   email: z.ZodEmail;
-  phoneNumber: z.ZodNever;
+  phoneNumber: z.ZodOptional<z.ZodNever>;
   code: z.ZodString;
 }, z.core.$strip>, z.ZodObject<{
   phoneNumber: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
-  email: z.ZodNever;
+  email: z.ZodOptional<z.ZodNever>;
   code: z.ZodString;
 }, z.core.$strip>]>;
 type OTPLogin = z.infer<typeof OTPCodeUnion>;
