@@ -265,7 +265,7 @@ declare const RequestOTPCodeSchema: z.ZodUnion<readonly [z.ZodObject<{
   usePassword: z.ZodDefault<z.ZodBoolean>;
   password: z.ZodOptional<z.ZodString>;
   phoneNumber: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
-  email: z.ZodNever;
+  email: z.ZodOptional<z.ZodNever>;
 }, z.core.$strip>, z.ZodObject<{
   otpPurpose: z.ZodEnum<{
     LOGIN: "LOGIN";
@@ -274,7 +274,7 @@ declare const RequestOTPCodeSchema: z.ZodUnion<readonly [z.ZodObject<{
   }>;
   usePassword: z.ZodDefault<z.ZodBoolean>;
   password: z.ZodOptional<z.ZodString>;
-  phoneNumber: z.ZodNever;
+  phoneNumber: z.ZodOptional<z.ZodNever>;
   email: z.ZodString;
 }, z.core.$strip>]>;
 type RequestOTP = z.infer<typeof RequestOTPCodeSchema>;

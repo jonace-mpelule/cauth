@@ -58,11 +58,11 @@ const BaseRequestOTP = z.object({
 // Either phone OR email — not both.
 const RequestOTPWithPhone = BaseRequestOTP.extend({
 	phoneNumber: phoneWithLibSchema,
-	email: z.never(),
+	email: z.never().optional(),
 });
 
 const RequestOTPWithEmail = BaseRequestOTP.extend({
-	phoneNumber: z.never(),
+	phoneNumber: z.never().optional(),
 	email: z.string().email(),
 });
 
