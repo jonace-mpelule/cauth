@@ -22,9 +22,14 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 
 	async createOTP<T = { code: string; purpose: string; expiresAt: Date }>(
 		{ config }: { config: CAuthOptions },
-		{ id, purpose }: { id: string; purpose: OtpPurpose },
+		{
+			...args
+		}: {
+			id: string;
+			purpose: OtpPurpose;
+		},
 	): Promise<T> {
-		// Enforce range between 4–8 (default: 6)
+		// Enforcing range between 4–8 defaults to 6 digits
 		const otpLength = Math.min(Math.max(config?.otpConfig?.length ?? 6, 4), 8);
 
 		// Generate random numeric OTP
@@ -36,28 +41,38 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 		const expiresInMs = config?.otpConfig?.expiresIn ?? 5 * 60 * 1000;
 		const expiresAt = new Date(Date.now() + expiresInMs);
 
-		// Hash the OTP
+		// Hash the otp Code
 		const hashCode = await bcrypt.hash(code, 10);
 
-		// Use Prisma upsert to update or create
-		const otp = await (this.#client as any).otp.upsert({
-			where: { id },
-			update: {
-				code: hashCode,
-				isUsed: false,
-				purpose,
-				expiresAt,
-			},
-			create: {
-				id,
-				code: hashCode,
-				isUsed: false,
-				purpose,
-				expiresAt,
-			},
-		});
+		let otp: any;
 
-		return { code, purpose: otp.purpose, expiresAt } as T;
+		try {
+			otp = await (this.#client as any).otp.update({
+				where: {
+					id: args.id,
+				},
+				data: {
+					code: hashCode,
+					isUsed: false,
+					purpose: args.purpose as any,
+					expiresAt,
+				},
+			});
+		} catch (err: any) {
+			if (err.code === 'P2025') {
+				otp = await (this.#client as any).otp.create({
+					data: {
+						id: args.id,
+						code: hashCode,
+						isUsed: false,
+						purpose: args.purpose as any,
+						expiresAt,
+					},
+				});
+			}
+		}
+
+		return { code: code, purpose: otp.purpose, expiresAt } as T;
 	}
 
 	async verifyOTP<T = { isValid: boolean }>({
