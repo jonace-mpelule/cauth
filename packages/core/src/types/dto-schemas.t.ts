@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { phoneWithLibSchema } from './phonenumber-schema.t.ts';
 
 // * EMAIL LOGIN DTO
+const OtpPurpose = z.enum(['LOGIN', 'RESET_PASSWORD', 'ACTION']);
 
 const EmailLogin = z.object({
 	email: z.email(),
@@ -28,6 +29,53 @@ export const LoginSchema = z
 	});
 
 export type LoginSchemaType = z.infer<typeof LoginSchema>;
+
+/** Login With Code */
+const OTPCodePhone = z.object({
+	phoneNumber: phoneWithLibSchema,
+	email: z.never(),
+	code: z.string().min(4).max(8),
+});
+
+const OTPCodeEmail = z.object({
+	email: z.email(),
+	phoneNumber: z.never(),
+	code: z.string().min(4).max(8),
+});
+
+export const OTPCodeUnion = z.union([OTPCodeEmail, OTPCodePhone]);
+
+export type OTPLogin = z.infer<typeof OTPCodeUnion>;
+
+//
+// Suppose this is defined somewhere
+const BaseRequestOTP = z.object({
+	otpPurpose: OtpPurpose,
+	usePassword: z.boolean().default(false),
+	password: z.string().optional(),
+});
+
+// Either phone OR email — not both.
+const RequestOTPWithPhone = BaseRequestOTP.extend({
+	phoneNumber: phoneWithLibSchema,
+	email: z.never(),
+});
+
+const RequestOTPWithEmail = BaseRequestOTP.extend({
+	phoneNumber: z.never(),
+	email: z.string().email(),
+});
+
+// Combine both options
+export const RequestOTPCodeSchema = z
+	.union([RequestOTPWithPhone, RequestOTPWithEmail])
+	.refine((data) => (data.usePassword ? !!data.password : !data.password), {
+		message: 'Password required only if usePassword is true',
+		path: ['password'],
+	});
+
+export type RequestOTP = z.infer<typeof RequestOTPCodeSchema>;
+//
 
 // * EMAIL REGISTRATION DTO
 const Register = z.object({

@@ -1,9 +1,5 @@
 import type { _CAuth } from '../cauth.ts';
-import {
-	AccountNotFoundError,
-	InvalidDataError,
-	InvalidRefreshTokenError,
-} from '../errors/errors.ts';
+import { CAuthErrors } from '../errors/errors.ts';
 import type { Account, Tokens } from '../types/auth.t.ts';
 import type { CAuthOptions } from '../types/config.t.ts';
 import {
@@ -32,8 +28,7 @@ export async function RefreshFn(
 
 	if (!out.success) {
 		return fail({
-			type: InvalidDataError.type,
-			error: new InvalidDataError(formatZodIssues(out)),
+			error: CAuthErrors.InvalidDataError(formatZodIssues(out)),
 		});
 	}
 
@@ -43,8 +38,7 @@ export async function RefreshFn(
 
 	if (payload.error) {
 		return fail({
-			type: InvalidRefreshTokenError.type,
-			error: new InvalidRefreshTokenError(),
+			error: CAuthErrors.InvalidRefreshTokenError,
 		});
 	}
 
@@ -54,15 +48,13 @@ export async function RefreshFn(
 
 	if (!account) {
 		return fail({
-			type: AccountNotFoundError.type,
-			error: new AccountNotFoundError(),
+			error: CAuthErrors.AccountNotFoundError,
 		});
 	}
 
 	if (!account?.refreshTokens?.includes(args.refreshToken)) {
 		return fail({
-			type: InvalidRefreshTokenError.type,
-			error: new InvalidRefreshTokenError(),
+			error: CAuthErrors.InvalidRefreshTokenError,
 		});
 	}
 

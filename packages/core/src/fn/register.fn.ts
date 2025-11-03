@@ -4,11 +4,7 @@ import {
 	RegisterSchema,
 	type RegisterSchemaType,
 } from '@core/types/dto-schemas.t.ts';
-import {
-	DuplicateAccountError,
-	InvalidDataError,
-	InvalidRoleError,
-} from '@errors/errors.ts';
+import { CAuthErrors } from '@errors/errors.ts';
 import { formatZodIssues } from '@utils/zod-joined-issues.ts';
 import bcrypt from 'bcrypt';
 import type { Account, Tokens } from '../types/auth.t.ts';
@@ -35,8 +31,7 @@ export async function RegisterFn(
 	const out = RegisterSchema.safeParse(args);
 	if (!out.success) {
 		return fail({
-			type: InvalidDataError.type,
-			error: new InvalidDataError(formatZodIssues(out)),
+			error: CAuthErrors.InvalidDataError(formatZodIssues(out)),
 		});
 	}
 
@@ -44,8 +39,7 @@ export async function RegisterFn(
 
 	if (!isRoleValid) {
 		return fail({
-			type: InvalidRoleError.type,
-			error: new InvalidRoleError(config.roles),
+			error: CAuthErrors.InvalidRoleError(config.roles),
 		});
 	}
 
@@ -55,12 +49,11 @@ export async function RegisterFn(
 	});
 	if (existing) {
 		return fail({
-			type: DuplicateAccountError.type,
-			error: new DuplicateAccountError(),
+			error: CAuthErrors.DuplicateAccountError,
 		});
 	}
 
-	const passwordHash = await bcrypt.hash(args.password, 10);
+	const passwordHash = await bcrypt.hash(String(args.password), 10);
 
 	const account = await config.dbContractor.createAccount({
 		data: {

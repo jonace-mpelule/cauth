@@ -1,8 +1,7 @@
 import type { _CAuth } from '@core/cauth.ts';
-import { CredentialMismatchError, InvalidDataError } from '@errors/errors.ts';
-
 import bcrypt from 'bcrypt';
 import type { CAuthOptions } from '@/core/src/types/config.t.ts';
+import { CAuthErrors } from '../errors/errors.ts';
 import type { Account, Tokens } from '../types/auth.t.ts';
 import { LoginSchema, type LoginSchemaType } from '../types/dto-schemas.t.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
@@ -26,8 +25,7 @@ export async function LoginFn(
 
 	if (!out.success) {
 		return fail({
-			type: InvalidDataError.type,
-			error: new InvalidDataError(formatZodIssues(out)),
+			error: CAuthErrors.InvalidDataError(formatZodIssues(out)),
 		});
 	}
 
@@ -38,8 +36,7 @@ export async function LoginFn(
 
 	if (!account) {
 		return fail({
-			type: CredentialMismatchError.type,
-			error: new CredentialMismatchError(),
+			error: CAuthErrors.CredentialMismatchError,
 		});
 	}
 
@@ -50,8 +47,7 @@ export async function LoginFn(
 
 	if (!passwordMatch) {
 		return fail({
-			type: CredentialMismatchError.type,
-			error: new CredentialMismatchError(),
+			error: CAuthErrors.CredentialMismatchError,
 		});
 	}
 

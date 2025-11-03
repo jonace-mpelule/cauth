@@ -44,7 +44,7 @@ export function RegisterRoute({ config, tokens }: RegisterDeps) {
 				return res.status(409).send({ code: ErrorValues.DuplicateAccount });
 			}
 
-			const passwordHash = await bcrypt.hash(password, 10);
+			const passwordHash = await bcrypt.hash(String(password), 10);
 
 			const account = await config.dbContractor.createAccount({
 				data: {

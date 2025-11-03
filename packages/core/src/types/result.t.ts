@@ -1,4 +1,6 @@
-type FNError = { type: string; error: Error };
+import type { CAuthErrorShape } from '../errors/errors.ts';
+
+type FNError = { error: CAuthErrorShape };
 /**
  * @description Core Result type.
  * @template T - The type of the value.
@@ -25,22 +27,20 @@ export function ok<T>(value: T): Result<T, never> {
  * @param {...E[]} errors - The errors to include in the failed result.
  * @returns {Result<T, E>} - The failed result with the provided errors.
  */
-export function fail<T, E extends { type: string; error: Error }>(
-	...errors: E[]
-): Result<T, E> {
+export function fail<T, E extends FNError>(...errors: E[]): Result<T, E> {
 	return { success: false, errors };
 }
 
-/**
- * @description Type guard to check if an error is of a specific type.
- * @template E - The type of the errors, which must extend { type: string }.
- * @param {E} err - The error to check.
- * @param {E["type"]} type - The type to check against.
- * @returns {err is E} - True if the error is of the specified type, false otherwise.
- */
-export function isErrorType<E extends { type: string }>(
-	err: E,
-	type: E['type'],
-): err is E {
-	return err.type === type;
-}
+// /**
+//  * @description Type guard to check if an error is of a specific type.
+//  * @template E - The type of the errors, which must extend { type: string }.
+//  * @param {E} err - The error to check.
+//  * @param {E["type"]} type - The type to check against.
+//  * @returns {err is E} - True if the error is of the specified type, false otherwise.
+//  */
+// export function isErrorType<E extends { type: string }>(
+// 	err: E,
+// 	type: E['type'],
+// ): err is E {
+// 	return err.type === type;
+// }

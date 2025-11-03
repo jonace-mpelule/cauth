@@ -5,10 +5,7 @@ import {
 } from '@core/types/dto-schemas.t.ts';
 import { tryCatch } from '@core/utils/tryCatch.ts';
 import { formatZodIssues } from '@core/utils/zod-joined-issues.ts';
-import {
-	InvalidDataError,
-	InvalidRefreshTokenError,
-} from '../errors/errors.ts';
+import { CAuthErrors } from '../errors/errors.ts';
 import type { CAuthOptions } from '../types/config.t.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
 
@@ -25,8 +22,7 @@ export async function LogoutFn(
 
 	if (!out.success) {
 		return fail({
-			type: InvalidDataError.type,
-			error: new InvalidDataError(formatZodIssues(out)),
+			error: CAuthErrors.InvalidDataError(formatZodIssues(out)),
 		});
 	}
 
@@ -36,8 +32,7 @@ export async function LogoutFn(
 
 	if (payload.error || !payload) {
 		return fail({
-			type: InvalidRefreshTokenError.type,
-			error: new InvalidRefreshTokenError(),
+			error: CAuthErrors.InvalidRefreshTokenError,
 		});
 	}
 

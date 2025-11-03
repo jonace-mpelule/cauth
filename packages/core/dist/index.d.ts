@@ -1,68 +1,6 @@
 import z$1, { z } from "zod";
 import ms from "ms";
 
-//#region src/errors/errors.d.ts
-declare class CError {
-  static type: string;
-  code: string;
-}
-/**
- * @description Error thrown when the credentials provided do not match.
- */
-declare class CredentialMismatchError extends Error implements CError {
-  code: string;
-  static type: string;
-  constructor();
-}
-/**
- * @description Error thrown when the data provided is invalid.
- */
-declare class InvalidDataError extends Error implements CError {
-  code: string;
-  static type: string;
-  constructor(reason: string);
-}
-/**
- * @description Error thrown when the account is not found.
- */
-declare class AccountNotFoundError extends Error implements CError {
-  code: string;
-  static type: string;
-  constructor();
-}
-/**
- * @description Error thrown when the role provided is invalid.
- */
-declare class InvalidRoleError extends Error implements CError {
-  code: string;
-  static type: string;
-  constructor(roles: string[]);
-}
-/**
- * @description Error thrown when an invalid or expired refresh token is provided
- */
-declare class InvalidRefreshTokenError extends Error implements CError {
-  code: string;
-  static type: string;
-  constructor();
-}
-/**
- * @description Error thrown when trying to create an account that already exists
- */
-declare class DuplicateAccountError extends Error implements CError {
-  code: string;
-  static type: string;
-  constructor();
-}
-/**
- * @description Error thrown when an invalid or expired OTP is provided
- */
-declare class InvalidOTPCode extends Error implements CError {
-  code: string;
-  static type: string;
-  constructor();
-}
-//#endregion
 //#region src/types/auth.t.d.ts
 type Account = {
   id: string;
@@ -90,10 +28,68 @@ declare const AuthModelSchema: z$1.ZodObject<{
 }, z$1.z.core.$strip>;
 type AuthModel = z$1.infer<typeof AuthModelSchema>;
 //#endregion
+//#region src/errors/errors.d.ts
+type CAuthErrorShape = {
+  type: string;
+  message: string;
+  code: string | number;
+  name: string;
+};
+declare const CAuthErrors: {
+  /** @description Error thrown when the credentials provided do not match. */
+  CredentialMismatchError: {
+    type: "credential-error";
+    message: "Credential mismatch. Please check your credentials and try again.";
+    code: "credential-mismatch";
+    name: "CredentialMismatchError";
+  };
+  /** @description Error thrown when the data provided is invalid. */
+  InvalidDataError: (reason: string) => CAuthErrorShape;
+  /** @description Error thrown when the account is not found. */
+  AccountNotFoundError: {
+    type: "invalid-data-error";
+    message: "Account not found";
+    code: "account-not-found";
+    name: "AccountNotFoundError";
+  };
+  /** @description Error thrown when the role provided is invalid. */
+  InvalidRoleError: (roles: string[]) => CAuthErrorShape;
+  /** @description Error thrown when an invalid or expired refresh token is provided */
+  InvalidRefreshTokenError: {
+    type: "validation-error";
+    message: "Invalid refresh token";
+    code: "invalid-refresh-token";
+    name: "InvalidRefreshTokenError";
+  };
+  /** @description Error thrown when trying to create an account that already exists */
+  DuplicateAccountError: {
+    type: "validation-error";
+    message: "Account with this credentials already exists";
+    code: "account-already-exists";
+    name: "DuplicateAccountError";
+  };
+  /** @description Error thrown when an invalid or expired OTP is provided */
+  InvalidOTPCode: {
+    type: "validation-error";
+    message: "Invalid Otp. Please check and try again";
+    code: "invalid-otp";
+    name: "InvalidOTPCode";
+  };
+  /** @description Error thrown when CAuth Schema error */
+  SchemaInvalidError: {
+    type: "validation-error";
+    message: "Your database error is not is sync with CAuth Spec";
+    code: "schema-validation";
+    name: string;
+  };
+};
+type CAuthErrorObject = ReturnType<Extract<(typeof CAuthErrors)[keyof typeof CAuthErrors], (...args: any) => any>> | Extract<(typeof CAuthErrors)[keyof typeof CAuthErrors], object>;
+declare function isCAuthError(err: unknown, name: keyof typeof CAuthErrors): err is CAuthErrorObject;
+declare function is(err: unknown, name: keyof typeof CAuthErrors): boolean;
+//#endregion
 //#region src/types/result.t.d.ts
 type FNError = {
-  type: string;
-  error: Error;
+  error: CAuthErrorShape;
 };
 /**
  * @description Core Result type.
@@ -250,6 +246,38 @@ declare const LoginSchema: z.ZodUnion<readonly [z.ZodObject<{
   password: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>]>;
 type LoginSchemaType = z.infer<typeof LoginSchema>;
+declare const OTPCodeUnion: z.ZodUnion<readonly [z.ZodObject<{
+  email: z.ZodEmail;
+  phoneNumber: z.ZodNever;
+  code: z.ZodString;
+}, z.core.$strip>, z.ZodObject<{
+  phoneNumber: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
+  email: z.ZodNever;
+  code: z.ZodString;
+}, z.core.$strip>]>;
+type OTPLogin = z.infer<typeof OTPCodeUnion>;
+declare const RequestOTPCodeSchema: z.ZodUnion<readonly [z.ZodObject<{
+  otpPurpose: z.ZodEnum<{
+    LOGIN: "LOGIN";
+    RESET_PASSWORD: "RESET_PASSWORD";
+    ACTION: "ACTION";
+  }>;
+  usePassword: z.ZodDefault<z.ZodBoolean>;
+  password: z.ZodOptional<z.ZodString>;
+  phoneNumber: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
+  email: z.ZodNever;
+}, z.core.$strip>, z.ZodObject<{
+  otpPurpose: z.ZodEnum<{
+    LOGIN: "LOGIN";
+    RESET_PASSWORD: "RESET_PASSWORD";
+    ACTION: "ACTION";
+  }>;
+  usePassword: z.ZodDefault<z.ZodBoolean>;
+  password: z.ZodOptional<z.ZodString>;
+  phoneNumber: z.ZodNever;
+  email: z.ZodString;
+}, z.core.$strip>]>;
+type RequestOTP = z.infer<typeof RequestOTPCodeSchema>;
 declare const RegisterSchema: z.ZodObject<{
   phoneNumber: z.ZodOptional<z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>>;
   email: z.ZodOptional<z.ZodEmail>;
@@ -322,17 +350,11 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
     }: ChangePasswordSchemaType) => Promise<Result<unknown>>;
     RequestOTPCode: ({
       ...args
-    }: Omit<LoginSchemaType, "password"> & {
-      password?: string;
-      usePassword?: boolean;
-      otpPurpose: OtpPurpose;
-    }) => Promise<Result<{
+    }: RequestOTP) => Promise<Result<{
       id: string;
       code: string;
     }>>;
-    LoginWithOTP: (args: Omit<LoginSchemaType, "password"> & {
-      code: string;
-    }) => Promise<Result<{
+    LoginWithOTP: (args: OTPLogin) => Promise<Result<{
       account: Account;
       tokens: Tokens;
     }>>;
@@ -363,4 +385,4 @@ declare function CAuth<const T extends string[], const TContractor extends Route
   routeContractor: TContractor;
 }): _CAuth<T, TContractor>;
 //#endregion
-export { AccountNotFoundError, CAuth, type CAuthOptions, CredentialMismatchError, type DatabaseContract, DuplicateAccountError, InvalidDataError, InvalidOTPCode, InvalidRefreshTokenError, InvalidRoleError, type RoutesContract };
+export { CAuth, CAuthErrors, type CAuthOptions, type DatabaseContract, type RoutesContract, is, isCAuthError };

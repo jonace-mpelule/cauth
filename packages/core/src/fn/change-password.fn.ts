@@ -4,13 +4,9 @@ import {
 	ChangePasswordSchema,
 	type ChangePasswordSchemaType,
 } from '@core/types/dto-schemas.t.ts';
-import {
-	AccountNotFoundError,
-	CredentialMismatchError,
-	InvalidDataError,
-} from '@errors/errors.ts';
 import { formatZodIssues } from '@utils/zod-joined-issues.ts';
 import bcrypt from 'bcrypt';
+import { CAuthErrors } from '../errors/errors.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
 
 type ChangePasswordDeps = {
@@ -26,8 +22,7 @@ export async function ChangePasswordFn(
 
 	if (!out.success) {
 		return fail({
-			type: InvalidDataError.type,
-			error: new InvalidDataError(formatZodIssues(out)),
+			error: CAuthErrors.InvalidDataError(formatZodIssues(out)),
 		});
 	}
 
@@ -37,8 +32,7 @@ export async function ChangePasswordFn(
 
 	if (!account) {
 		return fail({
-			type: AccountNotFoundError.type,
-			error: new AccountNotFoundError(),
+			error: CAuthErrors.CredentialMismatchError,
 		});
 	}
 
@@ -49,8 +43,7 @@ export async function ChangePasswordFn(
 
 	if (!passwordMatch) {
 		return fail({
-			type: CredentialMismatchError.type,
-			error: new CredentialMismatchError(),
+			error: CAuthErrors.CredentialMismatchError,
 		});
 	}
 

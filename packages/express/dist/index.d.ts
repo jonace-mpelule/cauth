@@ -29,10 +29,17 @@ declare const AuthModelSchema: z$1.ZodObject<{
 }, z$1.z.core.$strip>;
 type AuthModel = z$1.infer<typeof AuthModelSchema>;
 //#endregion
+//#region ../core/src/errors/errors.d.ts
+type CAuthErrorShape = {
+  type: string;
+  message: string;
+  code: string | number;
+  name: string;
+};
+//#endregion
 //#region ../core/src/types/result.t.d.ts
 type FNError = {
-  type: string;
-  error: Error;
+  error: CAuthErrorShape;
 };
 /**
  * @description Core Result type.
@@ -145,18 +152,50 @@ type CAuthOptions = z$1.infer<typeof CAuthOptionsSchema>;
 declare const LoginSchema: z.ZodUnion<readonly [z.ZodObject<{
   email: z.ZodEmail;
   phoneNumber: z.ZodOptional<z.ZodNever>;
-  password: z.ZodString;
+  password: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>, z.ZodObject<{
   phoneNumber: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
   email: z.ZodOptional<z.ZodNever>;
-  password: z.ZodString;
+  password: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>]>;
 type LoginSchemaType = z.infer<typeof LoginSchema>;
+declare const OTPCodeUnion: z.ZodUnion<readonly [z.ZodObject<{
+  email: z.ZodEmail;
+  phoneNumber: z.ZodNever;
+  code: z.ZodString;
+}, z.core.$strip>, z.ZodObject<{
+  phoneNumber: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
+  email: z.ZodNever;
+  code: z.ZodString;
+}, z.core.$strip>]>;
+type OTPLogin = z.infer<typeof OTPCodeUnion>;
+declare const RequestOTPCodeSchema: z.ZodUnion<readonly [z.ZodObject<{
+  otpPurpose: z.ZodEnum<{
+    LOGIN: "LOGIN";
+    RESET_PASSWORD: "RESET_PASSWORD";
+    ACTION: "ACTION";
+  }>;
+  usePassword: z.ZodDefault<z.ZodBoolean>;
+  password: z.ZodOptional<z.ZodString>;
+  phoneNumber: z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>;
+  email: z.ZodNever;
+}, z.core.$strip>, z.ZodObject<{
+  otpPurpose: z.ZodEnum<{
+    LOGIN: "LOGIN";
+    RESET_PASSWORD: "RESET_PASSWORD";
+    ACTION: "ACTION";
+  }>;
+  usePassword: z.ZodDefault<z.ZodBoolean>;
+  password: z.ZodOptional<z.ZodString>;
+  phoneNumber: z.ZodNever;
+  email: z.ZodString;
+}, z.core.$strip>]>;
+type RequestOTP = z.infer<typeof RequestOTPCodeSchema>;
 declare const RegisterSchema: z.ZodObject<{
   phoneNumber: z.ZodOptional<z.ZodPipe<z.ZodString, z.ZodTransform<string, string>>>;
   email: z.ZodOptional<z.ZodEmail>;
   role: z.ZodString;
-  password: z.ZodString;
+  password: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 type RegisterSchemaType = z.infer<typeof RegisterSchema>;
 declare const RefreshTokenSchema: z.ZodObject<{
@@ -224,17 +263,11 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
     }: ChangePasswordSchemaType) => Promise<Result<unknown>>;
     RequestOTPCode: ({
       ...args
-    }: Omit<LoginSchemaType, "password"> & {
-      password?: string;
-      usePassword?: boolean;
-      otpPurpose: OtpPurpose;
-    }) => Promise<Result<{
+    }: RequestOTP) => Promise<Result<{
       id: string;
       code: string;
     }>>;
-    LoginWithOTP: (args: Omit<LoginSchemaType, "password"> & {
-      code: string;
-    }) => Promise<Result<{
+    LoginWithOTP: (args: OTPLogin) => Promise<Result<{
       account: Account;
       tokens: Tokens;
     }>>;

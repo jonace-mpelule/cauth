@@ -4,12 +4,10 @@ import type { CAuthOptions } from '@core/types/config.t.ts';
 import {
 	LoginSchema,
 	type LoginSchemaType,
+	OTPCodeUnion,
+	type OTPLogin,
 } from '@core/types/dto-schemas.t.ts';
-import {
-	CredentialMismatchError,
-	InvalidDataError,
-	InvalidOTPCode,
-} from '@errors/errors.ts';
+import { CAuthErrors } from '@errors/errors.ts';
 import { formatZodIssues } from '@utils/zod-joined-issues.ts';
 import bcrypt from 'bcrypt';
 import type { Account, Tokens } from '../types/auth.t.ts';
@@ -44,8 +42,7 @@ export async function RequestAuthCode(
 
 	if (!out.success) {
 		return fail({
-			type: InvalidDataError.type,
-			error: new InvalidDataError(formatZodIssues(out)),
+			error: CAuthErrors.InvalidDataError(formatZodIssues(out)),
 		});
 	}
 
@@ -55,10 +52,7 @@ export async function RequestAuthCode(
 	});
 
 	if (!account) {
-		return fail({
-			type: CredentialMismatchError.type,
-			error: new CredentialMismatchError(),
-		});
+		return fail({ error: CAuthErrors.CredentialMismatchError });
 	}
 
 	// Optional password check
@@ -69,12 +63,11 @@ export async function RequestAuthCode(
 		);
 
 		if (!passwordMatch) {
-			return fail({
-				type: CredentialMismatchError.type,
-				error: new CredentialMismatchError(),
-			});
+			return fail({ error: CAuthErrors.CredentialMismatchError });
 		}
 	}
+
+	// MAKE SURE OTP EXISTS
 
 	const otp = await config.dbContractor.createOTP(
 		{ config },
@@ -97,17 +90,18 @@ type LoginWithCodeResult = {
 
 export async function LoginWithCode(
 	{ config, tokens }: AuthenticateDeps,
-	args: Omit<LoginSchemaType, 'password'> & { code: string },
+	args: OTPLogin,
 ): Promise<Result<LoginWithCodeResult>> {
-	const out = LoginSchema.safeParse({
-		email: args.email,
+	// Parse OTP Schema
+	const out = OTPCodeUnion.safeParse({
 		phoneNumber: args.phoneNumber,
+		email: args.email,
+		code: args.code,
 	});
 
 	if (!out.success) {
 		return fail({
-			type: InvalidDataError.type,
-			error: new InvalidDataError(formatZodIssues(out)),
+			error: CAuthErrors.InvalidDataError(formatZodIssues(out)),
 		});
 	}
 
@@ -118,8 +112,7 @@ export async function LoginWithCode(
 
 	if (!account) {
 		return fail({
-			type: CredentialMismatchError.type,
-			error: new CredentialMismatchError(),
+			error: CAuthErrors.CredentialMismatchError,
 		});
 	}
 
@@ -131,8 +124,7 @@ export async function LoginWithCode(
 
 	if (!codeValidation.isValid) {
 		return fail({
-			type: InvalidOTPCode.type,
-			error: new InvalidOTPCode(),
+			error: CAuthErrors.InvalidOTPCode,
 		});
 	}
 

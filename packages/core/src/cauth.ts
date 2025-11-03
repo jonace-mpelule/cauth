@@ -15,8 +15,10 @@ import type {
 	ChangePasswordSchemaType,
 	LoginSchemaType,
 	LogoutSchemaType,
+	OTPLogin,
 	RefreshTokenSchemaType,
 	RegisterSchemaType,
+	RequestOTP,
 } from './types/dto-schemas.t.ts';
 import type { OtpPurpose } from './types/otp-purpose.t.ts';
 import type { RoutesContract } from './types/routes.contract.t.ts';
@@ -114,17 +116,11 @@ export class _CAuth<
 		ChangePassword: ({ ...args }: ChangePasswordSchemaType) =>
 			ChangePasswordFn({ config: this.#config, tokens: this.Tokens }, args),
 
-		RequestOTPCode: ({
-			...args
-		}: Omit<LoginSchemaType, 'password'> & {
-			password?: string;
-			usePassword?: boolean;
-			otpPurpose: OtpPurpose;
-		}) => RequestAuthCode({ config: this.#config, tokens: this.Tokens }, args),
+		RequestOTPCode: ({ ...args }: RequestOTP) =>
+			RequestAuthCode({ config: this.#config, tokens: this.Tokens }, args),
 
-		LoginWithOTP: (
-			args: Omit<LoginSchemaType, 'password'> & { code: string },
-		) => LoginWithCode({ config: this.#config, tokens: this.Tokens }, args),
+		LoginWithOTP: (args: OTPLogin) =>
+			LoginWithCode({ config: this.#config, tokens: this.Tokens }, args),
 
 		VerifyOTP: (args: { id: string; code: string; otpPurpose: OtpPurpose }) =>
 			VerifyAuthCode({ config: this.#config, tokens: this.Tokens }, args),

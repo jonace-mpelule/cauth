@@ -46,7 +46,7 @@ export function ExpressAuthGuardImpl({ tokens, config, roles }: AuthGuardDeps) {
 				});
 			}
 
-			req.cauth = {
+			(req as any).cauth = {
 				id: out.data.id,
 				role: out.data.role,
 			};

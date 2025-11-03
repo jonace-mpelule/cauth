@@ -2,100 +2,106 @@
 import ErrorTypes from './error-types.values.ts';
 import ErrorValues from './errorValues.ts';
 
-// Implementing Class 'CError' for ts safety
-class CError {
-	static type: string;
-	public code!: string;
+export type CAuthErrorShape = {
+	type: string;
+	message: string;
+	code: string | number;
+	name: string;
+};
+
+const CAuthErrors = {
+	/** @description Error thrown when the credentials provided do not match. */
+	CredentialMismatchError: {
+		type: ErrorTypes.CredentialError,
+		message: ErrorValues.CredentialMismatchMessage,
+		code: ErrorValues.CredentialMismatch,
+		name: 'CredentialMismatchError' as const,
+	},
+
+	/** @description Error thrown when the data provided is invalid. */
+	InvalidDataError: (reason: string): CAuthErrorShape => ({
+		type: ErrorTypes.ValidationError,
+		message: ErrorValues.InvalidDataMessage(reason),
+		code: ErrorValues.InvalidData,
+		name: 'InvalidDataError',
+	}),
+
+	/** @description Error thrown when the account is not found. */
+	AccountNotFoundError: {
+		type: ErrorTypes.InvalidDataError,
+		message: ErrorValues.AccountNotFoundMessage,
+		code: ErrorValues.AccountNotFound,
+		name: 'AccountNotFoundError' as const,
+	},
+
+	/** @description Error thrown when the role provided is invalid. */
+	InvalidRoleError: (roles: string[]): CAuthErrorShape => ({
+		type: ErrorTypes.ValidationError,
+		message: ErrorValues.InvalidRoleMessage(roles),
+		code: ErrorValues.InvalidRole,
+		name: 'InvalidRoleError',
+	}),
+
+	/** @description Error thrown when an invalid or expired refresh token is provided */
+	InvalidRefreshTokenError: {
+		type: ErrorTypes.ValidationError,
+		message: ErrorValues.InvalidRefreshTokenMessage,
+		code: ErrorValues.InvalidRefreshToken,
+		name: 'InvalidRefreshTokenError' as const,
+	},
+
+	/** @description Error thrown when trying to create an account that already exists */
+	DuplicateAccountError: {
+		type: ErrorTypes.ValidationError,
+		message: ErrorValues.DuplicateAccountMessage,
+		code: ErrorValues.DuplicateAccount,
+		name: 'DuplicateAccountError' as const,
+	},
+
+	/** @description Error thrown when an invalid or expired OTP is provided */
+	InvalidOTPCode: {
+		type: ErrorTypes.ValidationError,
+		message: ErrorValues.InvalidOtpMessage,
+		code: ErrorValues.InvalidOtp,
+		name: 'InvalidOTPCode' as const,
+	},
+
+	/** @description Error thrown when CAuth Schema error */
+	SchemaInvalidError: {
+		type: ErrorTypes.ValidationError,
+		message: ErrorValues.SchemaValidationMessage,
+		code: ErrorValues.SchemaValidationError,
+		name: 'SchemaInvalidError',
+	},
+};
+
+// ---------- Helpers ----------
+
+type CAuthErrorObject =
+	| ReturnType<
+			Extract<
+				(typeof CAuthErrors)[keyof typeof CAuthErrors],
+				(...args: any) => any
+			>
+	  >
+	| Extract<(typeof CAuthErrors)[keyof typeof CAuthErrors], object>;
+
+function isCAuthError(
+	err: unknown,
+	name: keyof typeof CAuthErrors,
+): err is CAuthErrorObject {
+	return (
+		typeof err === 'object' &&
+		err !== null &&
+		'name' in err &&
+		(err as any).name === name
+	);
 }
 
-/**
- * @description Error thrown when the credentials provided do not match.
- */
-export class CredentialMismatchError extends Error implements CError {
-	public code: string;
-	static type: string = ErrorTypes.CredentialError;
-	constructor() {
-		super(ErrorValues.CredentialMismatchMessage);
-		this.code = ErrorValues.CredentialMismatch;
-		this.name = 'CredentialMismatch';
-	}
+function is(err: unknown, name: keyof typeof CAuthErrors): boolean {
+	return isCAuthError(err, name);
 }
 
-/**
- * @description Error thrown when the data provided is invalid.
- */
-export class InvalidDataError extends Error implements CError {
-	public code: string;
-	static type: string = ErrorTypes.ValidationError;
-	constructor(reason: string) {
-		super(ErrorValues.InvalidDataMessage(reason));
-		this.code = ErrorValues.InvalidData;
-		this.name = 'InvalidDataError';
-	}
-}
+// attach helper methods
 
-/**
- * @description Error thrown when the account is not found.
- */
-export class AccountNotFoundError extends Error implements CError {
-	public code: string;
-	static type: string = ErrorTypes.InvalidDataError;
-	constructor() {
-		super(ErrorValues.AccountNotFoundMessage);
-		this.code = ErrorValues.AccountNotFound;
-		this.name = 'AccountNotFoundError';
-	}
-}
-
-/**
- * @description Error thrown when the role provided is invalid.
- */
-export class InvalidRoleError extends Error implements CError {
-	public code: string;
-	static type: string = ErrorTypes.ValidationError;
-	constructor(roles: string[]) {
-		super(ErrorValues.InvalidRoleMessage(roles));
-		this.code = ErrorValues.InvalidRole;
-		this.name = 'InvalidRoleError';
-	}
-}
-
-/**
- * @description Error thrown when an invalid or expired refresh token is provided
- */
-export class InvalidRefreshTokenError extends Error implements CError {
-	public code: string;
-	static type: string = ErrorTypes.ValidationError;
-	constructor() {
-		super(ErrorValues.InvalidRefreshTokenMessage);
-		this.code = ErrorValues.InvalidRefreshToken;
-		this.name = 'InvalidRefreshTokenError';
-	}
-}
-
-/**
- * @description Error thrown when trying to create an account that already exists
- */
-export class DuplicateAccountError extends Error implements CError {
-	public code: string;
-	static type: string = ErrorTypes.ValidationError;
-	constructor() {
-		super(ErrorValues.DuplicateAccountMessage);
-		this.code = ErrorValues.DuplicateAccount;
-		this.name = 'DuplicateAccountError';
-	}
-}
-
-/**
- * @description Error thrown when an invalid or expired OTP is provided
- */
-export class InvalidOTPCode extends Error implements CError {
-	public code: string;
-	static type: string = ErrorTypes.ValidationError;
-
-	constructor() {
-		super(ErrorValues.InvalidOtpMessage);
-		this.code = ErrorValues.InvalidOtp;
-		this.name = 'InvalidOTPCode';
-	}
-}
+export { CAuthErrors, is, isCAuthError };

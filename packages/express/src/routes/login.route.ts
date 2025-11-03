@@ -38,7 +38,7 @@ export function LoginRoute({ config, tokens }: loginDeps) {
 			}
 
 			const passwordMatch = await bcrypt.compare(
-				password,
+				String(password),
 				String(account.passwordHash),
 			);
 
