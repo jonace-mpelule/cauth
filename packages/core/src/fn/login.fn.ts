@@ -1,5 +1,5 @@
 import type { _CAuth } from '@core/cauth.ts';
-import bcrypt from 'bcrypt';
+import Bun from 'bun';
 import type { CAuthOptions } from '@/core/src/types/config.t.ts';
 import { CAuthErrors } from '../errors/errors.ts';
 import type { Account, Tokens } from '../types/auth.t.ts';
@@ -40,7 +40,7 @@ export async function LoginFn(
 		});
 	}
 
-	const passwordMatch = await bcrypt.compare(
+	const passwordMatch = await Bun.password.verify(
 		String(args.password),
 		String(account?.passwordHash),
 	);

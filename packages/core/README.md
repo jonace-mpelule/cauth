@@ -11,6 +11,13 @@ Core authentication library for Node.js applications with TypeScript support.
 - **Phone Number Support**: E.164 format validation using libphonenumber-js
 - **Error Handling**: Comprehensive error types and handling
 - **Modular Design**: Pluggable database and route contractors
+- **Secure Defaults**: Argon2 password hashing and hashed refresh tokens
+
+## Security & Breaking Changes
+
+- **Secure OTP Generation**: OTPs are now generated using `crypto.randomInt` for cryptographic security.
+- **Refresh Token Hashing**: Refresh tokens are now hashed before storage. **Existing refresh tokens in the database will be invalid.** Users will need to log in again.
+- **Password Hashing**: Standardized on `Bun.password` (Argon2). Existing bcrypt hashes are still supported for verification.
 
 ## Installation
 

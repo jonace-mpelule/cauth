@@ -10,6 +10,11 @@ Express integration for CAuth authentication system.
 - **Request Augmentation**: Typed user data in request object
 - **Error Handling**: Express-compatible error handling
 
+## Security Updates
+
+- **Refactored Routes**: Routes now use the core `FN` functions directly for consistent security logic.
+- **Error Handling**: Standardized error mapping for security-related errors.
+
 ## Installation
 
 ```bash

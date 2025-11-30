@@ -6,7 +6,7 @@ import {
 } from '@/core/src/types/dto-schemas.t.ts';
 import { CAuthErrors } from '@/core/src/errors/errors.ts';
 import { formatZodIssues } from '@/core/src/utils/zod-joined-issues.ts';
-import bcrypt from 'bcrypt';
+import Bun from 'bun';
 import type { Account, Tokens } from '../types/auth.t.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
 
@@ -53,7 +53,10 @@ export async function RegisterFn(
 		});
 	}
 
-	const passwordHash = await bcrypt.hash(String(args.password), 10);
+	const passwordHash = await Bun.password.hash(String(args.password), {
+		algorithm: 'bcrypt',
+		cost: 10,
+	});
 
 	const account = await config.dbContractor.createAccount({
 		data: {

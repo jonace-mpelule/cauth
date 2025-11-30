@@ -3,6 +3,7 @@ import type { DatabaseContract } from '@core/types/database.contract.ts';
 import Bun from "bun";
 import type { AuthModel } from '@/core/src/types/auth.t.ts';
 import type { OtpPurpose } from '@/core/src/types/otp-purpose.t.ts';
+import { randomInt } from 'node:crypto';
 
 export interface PrismaClientLike {
 	$connect: () => Promise<void>;
@@ -12,8 +13,7 @@ export interface PrismaClientLike {
 }
 
 export class PrismaContractor<TClient extends PrismaClientLike>
-	implements DatabaseContract
-{
+	implements DatabaseContract {
 	#client: TClient;
 
 	constructor(client: TClient) {
@@ -33,8 +33,9 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 		const otpLength = Math.min(Math.max(config?.otpConfig?.length ?? 6, 4), 8);
 
 		// Generate random numeric OTP
+		// Generate random numeric OTP
 		const code = Array.from({ length: otpLength }, () =>
-			Math.floor(Math.random() * 10),
+			randomInt(0, 10),
 		).join('');
 
 		// Calculate expiration time
@@ -43,7 +44,7 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 
 		// Hash the otp Code
 		const hashCode = await Bun.password.hash(code, {
-			algorithm: 'bcrypt', 
+			algorithm: 'bcrypt',
 			cost: 10
 		})
 
@@ -165,11 +166,14 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 			throw new Error(`account-not-found: ${id}`);
 		}
 
+		const hashedRefreshToken = await Bun.password.hash(refreshToken);
 		let updatedTokens = account?.refreshTokens?.filter(
-			(t: any) => t !== refreshToken,
+			(t: any) => !Bun.password.verifySync(refreshToken, t),
 		);
+
 		if (newRefreshToken) {
-			updatedTokens?.push(newRefreshToken);
+			const hashedNewRefreshToken = await Bun.password.hash(newRefreshToken);
+			updatedTokens?.push(hashedNewRefreshToken);
 			updatedTokens = Array.from(new Set(updatedTokens));
 		}
 
@@ -194,7 +198,7 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 			data: {
 				lastLogin: new Date(),
 				refreshTokens: {
-					push: args.refreshToken,
+					push: await Bun.password.hash(args.refreshToken),
 				},
 			},
 			select: args.select,
