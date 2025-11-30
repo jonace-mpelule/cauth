@@ -1,0 +1,13 @@
+[install]
+# optional: specify workspace root if needed
+# root = "."
+
+[alias]
+"@core" = "./packages/core/src"
+"@prisma" = "./packages/prisma/src"
+"@express" = "./packages/express/src"
+"@types" = "./packages/core/src/types"
+"@errors" = "./packages/core/src/errors"
+"@fn" = "./packages/core/src/fn"
+"@utils" = "./packages/core/src/utils"
+"@" = "./packages"

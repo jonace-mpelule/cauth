@@ -1,10 +1,10 @@
-import type { _CAuth } from '@core/cauth.ts';
-import type { CAuthOptions } from '@core/types/config.t.ts';
+import type { _CAuth } from '@/core/src/cauth.ts';
+import type { CAuthOptions } from '@/core/src/types/config.t.ts';
 import {
 	ChangePasswordSchema,
 	type ChangePasswordSchemaType,
-} from '@core/types/dto-schemas.t.ts';
-import { formatZodIssues } from '@utils/zod-joined-issues.ts';
+} from '@/core/src/types/dto-schemas.t.ts';
+import { formatZodIssues } from '@/core/src/utils/zod-joined-issues.ts';
 import bcrypt from 'bcrypt';
 import { CAuthErrors } from '../errors/errors.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';

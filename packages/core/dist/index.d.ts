@@ -25,7 +25,7 @@ declare const AuthModelSchema: z$1.ZodObject<{
   refreshTokens: z$1.ZodOptional<z$1.ZodArray<z$1.ZodString>>;
   createdAt: z$1.ZodDate;
   updatedAt: z$1.ZodDate;
-}, z$1.z.core.$strip>;
+}, z$1.core.$strip>;
 type AuthModel = z$1.infer<typeof AuthModelSchema>;
 //#endregion
 //#region src/errors/errors.d.ts
@@ -227,12 +227,12 @@ declare const CAuthOptionsSchema: z$1.ZodObject<{
     accessTokenSecret: z$1.ZodString;
     accessTokenLifeSpan: z$1.ZodOptional<z$1.ZodCustom<ms.StringValue, ms.StringValue>>;
     refreshTokenLifeSpan: z$1.ZodOptional<z$1.ZodCustom<ms.StringValue, ms.StringValue>>;
-  }, z$1.z.core.$strip>;
+  }, z$1.core.$strip>;
   otpConfig: z$1.ZodObject<{
     expiresIn: z$1.ZodOptional<z$1.ZodNumber>;
     length: z$1.ZodOptional<z$1.ZodNumber>;
-  }, z$1.z.core.$strip>;
-}, z$1.z.core.$strip>;
+  }, z$1.core.$strip>;
+}, z$1.core.$strip>;
 type CAuthOptions = z$1.infer<typeof CAuthOptionsSchema>;
 //#endregion
 //#region src/types/dto-schemas.t.d.ts
@@ -350,9 +350,10 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
     }: ChangePasswordSchemaType) => Promise<Result<unknown>>;
     RequestOTPCode: ({
       ...args
-    }: RequestOTP) => Promise<Result<{
+    }: RequestOTP & {
+      onCode: (code: string) => any;
+    }) => Promise<Result<{
       id: string;
-      code: string;
     }>>;
     LoginWithOTP: (args: OTPLogin) => Promise<Result<{
       account: Account;

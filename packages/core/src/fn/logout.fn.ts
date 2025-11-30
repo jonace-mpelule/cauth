@@ -1,10 +1,10 @@
-import type { _CAuth } from '@core/cauth.ts';
+import type { _CAuth } from '@/core/src/cauth.ts';
 import {
 	LogoutSchema,
 	type LogoutSchemaType,
-} from '@core/types/dto-schemas.t.ts';
+} from '@/core/src/types/dto-schemas.t.ts';
 import { tryCatch } from '@core/utils/tryCatch.ts';
-import { formatZodIssues } from '@core/utils/zod-joined-issues.ts';
+import { formatZodIssues } from "@/core/src/utils/zod-joined-issues.ts";
 import { CAuthErrors } from '../errors/errors.ts';
 import type { CAuthOptions } from '../types/config.t.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';

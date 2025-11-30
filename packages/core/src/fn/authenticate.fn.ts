@@ -1,19 +1,17 @@
-import type { _CAuth } from '@core/cauth.ts';
-import Strings from '@core/helpers/strings.ts';
-import type { CAuthOptions } from '@core/types/config.t.ts';
+import type { _CAuth } from '@/core/src/cauth.ts';
+import Strings from '@/core/src/helpers/strings.ts';
+import type { CAuthOptions } from '@/core/src/types/config.t.ts';
 import {
-	LoginSchema,
-	type LoginSchemaType,
-	OTPCodeUnion,
+	LoginSchema, OTPCodeUnion,
 	type OTPLogin,
-} from '@core/types/dto-schemas.t.ts';
-import { CAuthErrors } from '@errors/errors.ts';
-import { formatZodIssues } from '@utils/zod-joined-issues.ts';
-import bcrypt from 'bcrypt';
+	type RequestOTP
+} from '@/core/src/types/dto-schemas.t.ts';
+import { CAuthErrors } from '../errors/errors.ts';
+import { formatZodIssues } from '../utils/zod-joined-issues.ts';
+
 import type { Account, Tokens } from '../types/auth.t.ts';
 import type { OtpPurpose } from '../types/otp-purpose.t.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
-
 // Common Dep
 type AuthenticateDeps = {
 	config: CAuthOptions;
@@ -22,18 +20,11 @@ type AuthenticateDeps = {
 
 type AuthCodeResult = {
 	id: string;
-	code: string;
 };
 
 export async function RequestAuthCode(
 	{ config }: AuthenticateDeps,
-	args: Omit<LoginSchemaType, 'password'> & {
-		email?: string;
-		phoneNumber?: string;
-		password?: string;
-		usePassword?: boolean;
-		otpPurpose: OtpPurpose;
-	},
+	{...args}: RequestOTP & { onCode: (code: string) => any} ,
 ): Promise<Result<AuthCodeResult>> {
 	const out = LoginSchema.safeParse({
 		email: args.email,
@@ -57,7 +48,7 @@ export async function RequestAuthCode(
 
 	// Optional password check
 	if (args.usePassword) {
-		const passwordMatch = await bcrypt.compare(
+		const passwordMatch = await Bun.password.verify(
 			String(args.password),
 			String(account?.passwordHash),
 		);
@@ -79,7 +70,6 @@ export async function RequestAuthCode(
 
 	return ok({
 		id: account.id,
-		code: otp.code,
 	});
 }
 

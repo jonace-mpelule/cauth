@@ -116,7 +116,7 @@ export class _CAuth<
 		ChangePassword: ({ ...args }: ChangePasswordSchemaType) =>
 			ChangePasswordFn({ config: this.#config, tokens: this.Tokens }, args),
 
-		RequestOTPCode: ({ ...args }: RequestOTP) =>
+		RequestOTPCode: ({ ...args }: RequestOTP & {onCode: (code: string) => any,}) =>
 			RequestAuthCode({ config: this.#config, tokens: this.Tokens }, args),
 
 		LoginWithOTP: (args: OTPLogin) =>

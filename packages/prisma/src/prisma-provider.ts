@@ -1,6 +1,6 @@
 import type { CAuthOptions } from '@core/types/config.t.ts';
 import type { DatabaseContract } from '@core/types/database.contract.ts';
-import bcrypt from 'bcrypt';
+import Bun from "bun";
 import type { AuthModel } from '@/core/src/types/auth.t.ts';
 import type { OtpPurpose } from '@/core/src/types/otp-purpose.t.ts';
 
@@ -42,7 +42,11 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 		const expiresAt = new Date(Date.now() + expiresInMs);
 
 		// Hash the otp Code
-		const hashCode = await bcrypt.hash(code, 10);
+		const hashCode = await Bun.password.hash(code, {
+			algorithm: 'bcrypt', 
+			cost: 10
+		})
+
 
 		let otp: any;
 
@@ -91,8 +95,8 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 		if (!otp) {
 			return { isValid: false } as T;
 		}
+		const isMatch = await Bun.password.verify(args.code, otp.code)
 
-		const isMatch = await bcrypt.compare(args.code, otp.code);
 		if (!isMatch)
 			return {
 				isValid: false,
@@ -162,7 +166,7 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 		}
 
 		let updatedTokens = account?.refreshTokens?.filter(
-			(t) => t !== refreshToken,
+			(t: any) => t !== refreshToken,
 		);
 		if (newRefreshToken) {
 			updatedTokens?.push(newRefreshToken);

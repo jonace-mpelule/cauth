@@ -1,36 +1,64 @@
 {
 	"compilerOptions": {
 		"target": "ES2022",
-		"lib": ["ES2022", "ESNext.AsyncIterable"],
-		"typeRoots": ["./node_modules/@types", "/src/types"],
+		"lib": [
+			"ES2022",
+			"ESNext.AsyncIterable"
+		],
+		"typeRoots": [
+			"./node_modules/@types",
+			"/src/types"
+		],
 		"allowSyntheticDefaultImports": true,
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
-		"allowImportingTsExtensions": true,
 		"forceConsistentCasingInFileNames": true,
-		"moduleResolution": "nodenext",
-		"module": "NodeNext",
+		"module": "Preserve",
 		"pretty": true,
+		"moduleResolution": "Node",
+		"allowImportingTsExtensions": true,
+		"verbatimModuleSyntax": true,
+		"noEmit": true,
 		"sourceMap": true,
 		"skipLibCheck": true,
 		"allowJs": true,
-		"strict": true, 
+		"strict": true,
 		"esModuleInterop": true,
 		"declaration": true,
-		"declarationDir": "dist",
+		// "rootDir": "./",
 		"emitDeclarationOnly": true,
-		"noEmit": false,
 		"paths": {
-			"@/*": ["./packages/*" ], 
-			"@core/*": ["./packages/core/src/*"],
-			"@prisma/*": ["./packages/prisma/src/*"],
-			"@express/*": ["./packages/express/src/*"],
-			"@types/*": ["./packages/core/src/types/*"],
-			"@errors/*": ["./packages/core/src/errors/*"],
-			"@fn/*": ["./packages/core/src/fn/*"],
-			"@utils/*": ["./packages/core/src/utils/*"],
+			"@/*": [
+				"./packages/*"
+			],
+			"@core/*": [
+				"./packages/core/src/*"
+			],
+			"@prisma/*": [
+				"./packages/prisma/src/*"
+			],
+			"@express/*": [
+				"./packages/express/src/*"
+			],
+			"@types/*": [
+				"./packages/core/src/types/*"
+			],
+			"@errors/*": [
+				"./packages/core/src/errors/*"
+			],
+			"@fn/*": [
+				"./packages/core/src/fn/*"
+			],
+			"@utils/*": [
+				"./packages/core/src/utils/*"
+			],
 		}
 	},
-  	"include": ["./packages/**/*"],
-	"exclude": ["node_modules", "./packages/prisma/src/generated/**/*"]
+	"include": [
+		"./packages/**/*"
+	],
+	"exclude": [
+		"node_modules",
+		"./packages/prisma/src/generated/**/*"
+	]
 }
