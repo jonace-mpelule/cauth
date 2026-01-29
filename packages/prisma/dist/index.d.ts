@@ -1,7 +1,7 @@
-import z$1, { z } from "zod";
 import ms from "ms";
+import z$1, { z } from "zod";
 
-//#region src/types/auth.t.d.ts
+//#region ../core/src/types/auth.t.d.ts
 type Account = {
   id: string;
   phoneNumber: string;
@@ -31,86 +31,10 @@ declare const AuthModelSchema: z$1.ZodObject<{
 }, z$1.core.$strip>;
 type AuthModel = z$1.infer<typeof AuthModelSchema>;
 //#endregion
-//#region src/errors/errors.d.ts
-type CAuthErrorShape = {
-  type: string;
-  message: string;
-  code: string | number;
-  name: string;
-};
-declare const CAuthErrors: {
-  /** @description Error thrown when the credentials provided do not match. */
-  CredentialMismatchError: {
-    type: "credential-error";
-    message: "Credential mismatch. Please check your credentials and try again.";
-    code: "credential-mismatch";
-    name: "CredentialMismatchError";
-  };
-  /** @description Error thrown when the data provided is invalid. */
-  InvalidDataError: (reason: string) => CAuthErrorShape;
-  /** @description Error thrown when the account is not found. */
-  AccountNotFoundError: {
-    type: "invalid-data-error";
-    message: "Account not found";
-    code: "account-not-found";
-    name: "AccountNotFoundError";
-  };
-  /** @description Error thrown when the role provided is invalid. */
-  InvalidRoleError: (roles: string[]) => CAuthErrorShape;
-  /** @description Error thrown when an invalid or expired refresh token is provided */
-  InvalidRefreshTokenError: {
-    type: "validation-error";
-    message: "Invalid refresh token";
-    code: "invalid-refresh-token";
-    name: "InvalidRefreshTokenError";
-  };
-  /** @description Error thrown when trying to create an account that already exists */
-  DuplicateAccountError: {
-    type: "validation-error";
-    message: "Account with this credentials already exists";
-    code: "account-already-exists";
-    name: "DuplicateAccountError";
-  };
-  /** @description Error thrown when an invalid or expired OTP is provided */
-  InvalidOTPCode: {
-    type: "validation-error";
-    message: "Invalid Otp. Please check and try again";
-    code: "invalid-otp";
-    name: "InvalidOTPCode";
-  };
-  /** @description Error thrown when CAuth Schema error */
-  SchemaInvalidError: {
-    type: "validation-error";
-    message: "Your database error is not is sync with CAuth Spec";
-    code: "schema-validation";
-    name: string;
-  };
-};
-type CAuthErrorObject = ReturnType<Extract<(typeof CAuthErrors)[keyof typeof CAuthErrors], (...args: any) => any>> | Extract<(typeof CAuthErrors)[keyof typeof CAuthErrors], object>;
-declare function isCAuthError(err: unknown, name: keyof typeof CAuthErrors): err is CAuthErrorObject;
-declare function is(err: unknown, name: keyof typeof CAuthErrors): boolean;
-//#endregion
-//#region src/types/result.t.d.ts
-type FNError = {
-  error: CAuthErrorShape;
-};
-/**
- * @description Core Result type.
- * @template T - The type of the value.
- * @template E - The type of the errors, which must extend { type: string; error: Error }.
- */
-type Result<T, E extends FNError = FNError> = {
-  success: true;
-  value: T;
-} | {
-  success: false;
-  errors: E[];
-};
-//#endregion
-//#region src/types/otp-purpose.t.d.ts
+//#region ../core/src/types/otp-purpose.t.d.ts
 type OtpPurpose = 'LOGIN' | 'RESET_PASSWORD' | 'ACTION';
 //#endregion
-//#region src/types/database.contract.d.ts
+//#region ../core/src/types/database.contract.d.ts
 interface DatabaseContract {
   findAccountById<T = AuthModel>({
     ...args
@@ -184,62 +108,32 @@ interface DatabaseContract {
   }): Promise<T>;
 }
 //#endregion
-//#region src/types/routes.contract.t.d.ts
-type RouteDeps = {
-  config: CAuthOptions;
-  tokens: _CAuth<any>['Tokens'];
+//#region ../core/src/errors/errors.d.ts
+type CAuthErrorShape = {
+  type: string;
+  message: string;
+  code: string | number;
+  name: string;
 };
-type AuthGuardDeps = {
-  config: CAuthOptions;
-  tokens: _CAuth<any>['Tokens'];
-  roles?: Array<string>;
+//#endregion
+//#region ../core/src/types/result.t.d.ts
+type FNError = {
+  error: CAuthErrorShape;
 };
 /**
- * Generic RoutesContract
- * THandler is generic, defaults to any function
+ * @description Core Result type.
+ * @template T - The type of the value.
+ * @template E - The type of the errors, which must extend { type: string; error: Error }.
  */
-interface RoutesContract<THandler extends (...args: any[]) => any = (...args: any[]) => any> {
-  Login({
-    ...config
-  }: RouteDeps): THandler;
-  Register({
-    ...config
-  }: RouteDeps): THandler;
-  Logout({
-    ...config
-  }: RouteDeps): THandler;
-  Guard({
-    ...config
-  }: AuthGuardDeps): THandler;
-  Refresh({
-    ...config
-  }: AuthGuardDeps): THandler;
-  ChangePassword({
-    ...config
-  }: RouteDeps & {
-    userId: string;
-  }): THandler;
-}
+type Result<T, E extends FNError = FNError> = {
+  success: true;
+  value: T;
+} | {
+  success: false;
+  errors: E[];
+};
 //#endregion
-//#region src/types/config.t.d.ts
-declare const CAuthOptionsSchema: z$1.ZodObject<{
-  dbContractor: z$1.ZodCustom<DatabaseContract, DatabaseContract>;
-  routeContractor: z$1.ZodCustom<RoutesContract<(...args: any[]) => any>, RoutesContract<(...args: any[]) => any>>;
-  roles: z$1.ZodArray<z$1.ZodString>;
-  jwtConfig: z$1.ZodObject<{
-    refreshTokenSecret: z$1.ZodString;
-    accessTokenSecret: z$1.ZodString;
-    accessTokenLifeSpan: z$1.ZodOptional<z$1.ZodCustom<ms.StringValue, ms.StringValue>>;
-    refreshTokenLifeSpan: z$1.ZodOptional<z$1.ZodCustom<ms.StringValue, ms.StringValue>>;
-  }, z$1.core.$strip>;
-  otpConfig: z$1.ZodObject<{
-    expiresIn: z$1.ZodOptional<z$1.ZodNumber>;
-    length: z$1.ZodOptional<z$1.ZodNumber>;
-  }, z$1.core.$strip>;
-}, z$1.core.$strip>;
-type CAuthOptions = z$1.infer<typeof CAuthOptionsSchema>;
-//#endregion
-//#region src/types/dto-schemas.t.d.ts
+//#region ../core/src/types/dto-schemas.t.d.ts
 declare const LoginSchema: z.ZodUnion<readonly [z.ZodObject<{
   email: z.ZodEmail;
   phoneNumber: z.ZodOptional<z.ZodNever>;
@@ -304,7 +198,7 @@ declare const ChangePasswordSchema: z.ZodObject<{
 }, z.core.$strip>;
 type ChangePasswordSchemaType = z.infer<typeof ChangePasswordSchema>;
 //#endregion
-//#region src/cauth.d.ts
+//#region ../core/src/cauth.d.ts
 declare class _CAuth<T extends string[], TContractor extends RoutesContract<any> = RoutesContract<any>> {
   #private;
   constructor(config: Omit<CAuthOptions, 'roles'> & {
@@ -382,12 +276,145 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
     VerifyAccessToken: <R>(token: any) => Promise<R | null>;
   };
 }
-/**
- * return typed instance of `_CAuth` while preserving contractor type.
- */
-declare function CAuth<const T extends string[], const TContractor extends RoutesContract<any>>(options: Omit<CAuthOptions, 'roles'> & {
-  roles: T;
-  routeContractor: TContractor;
-}): _CAuth<T, TContractor>;
 //#endregion
-export { CAuth, CAuthErrors, type CAuthOptions, type DatabaseContract, type RoutesContract, is, isCAuthError };
+//#region ../core/src/types/routes.contract.t.d.ts
+type RouteDeps = {
+  config: CAuthOptions;
+  tokens: _CAuth<any>['Tokens'];
+};
+type AuthGuardDeps = {
+  config: CAuthOptions;
+  tokens: _CAuth<any>['Tokens'];
+  roles?: Array<string>;
+};
+/**
+ * Generic RoutesContract
+ * THandler is generic, defaults to any function
+ */
+interface RoutesContract<THandler extends (...args: any[]) => any = (...args: any[]) => any> {
+  Login({
+    ...config
+  }: RouteDeps): THandler;
+  Register({
+    ...config
+  }: RouteDeps): THandler;
+  Logout({
+    ...config
+  }: RouteDeps): THandler;
+  Guard({
+    ...config
+  }: AuthGuardDeps): THandler;
+  Refresh({
+    ...config
+  }: AuthGuardDeps): THandler;
+  ChangePassword({
+    ...config
+  }: RouteDeps & {
+    userId: string;
+  }): THandler;
+}
+//#endregion
+//#region ../core/src/types/config.t.d.ts
+declare const CAuthOptionsSchema: z$1.ZodObject<{
+  dbContractor: z$1.ZodCustom<DatabaseContract, DatabaseContract>;
+  routeContractor: z$1.ZodCustom<RoutesContract<(...args: any[]) => any>, RoutesContract<(...args: any[]) => any>>;
+  roles: z$1.ZodArray<z$1.ZodString>;
+  jwtConfig: z$1.ZodObject<{
+    refreshTokenSecret: z$1.ZodString;
+    accessTokenSecret: z$1.ZodString;
+    accessTokenLifeSpan: z$1.ZodOptional<z$1.ZodCustom<ms.StringValue, ms.StringValue>>;
+    refreshTokenLifeSpan: z$1.ZodOptional<z$1.ZodCustom<ms.StringValue, ms.StringValue>>;
+  }, z$1.core.$strip>;
+  otpConfig: z$1.ZodObject<{
+    expiresIn: z$1.ZodOptional<z$1.ZodNumber>;
+    length: z$1.ZodOptional<z$1.ZodNumber>;
+  }, z$1.core.$strip>;
+}, z$1.core.$strip>;
+type CAuthOptions = z$1.infer<typeof CAuthOptionsSchema>;
+//#endregion
+//#region src/prisma-provider.d.ts
+interface PrismaClientLike {
+  $connect: () => Promise<void>;
+  $disconnect: () => Promise<void>;
+  $transaction: (...args: any[]) => Promise<any>;
+  [model: string]: any;
+}
+declare class PrismaContractor<TClient extends PrismaClientLike> implements DatabaseContract {
+  #private;
+  constructor(client: TClient);
+  createOTP<T = {
+    code: string;
+    purpose: string;
+    expiresAt: Date;
+  }>({
+    config
+  }: {
+    config: CAuthOptions;
+  }, {
+    ...args
+  }: {
+    id: string;
+    purpose: OtpPurpose;
+  }): Promise<T>;
+  verifyOTP<T = {
+    isValid: boolean;
+  }>({
+    ...args
+  }: {
+    id: string;
+    code: string;
+    purpose: OtpPurpose;
+  }): Promise<T>;
+  findAccountById<T>({
+    id
+  }: {
+    id: string;
+  }): Promise<T>;
+  findAccountWithCredential({
+    ...args
+  }: {
+    email?: string;
+    phoneNumber?: string;
+    select?: any;
+  }): Promise<any>;
+  createAccount({
+    ...args
+  }: {
+    data: any;
+    select?: any;
+  }): Promise<any>;
+  removeAndAddRefreshToken<T>({
+    id,
+    refreshToken,
+    select,
+    newRefreshToken,
+    config
+  }: {
+    id: string;
+    refreshToken: string;
+    select?: any;
+    newRefreshToken?: string;
+    config: CAuthOptions;
+  }): Promise<T>;
+  updateAccountLogin({
+    ...args
+  }: {
+    id: string;
+    refreshToken: string;
+    select?: any;
+    config: CAuthOptions;
+  }): Promise<any>;
+  updateAccount({
+    ...args
+  }: {
+    id: string;
+    data: any;
+  }): Promise<any>;
+  deleteAccount({
+    id
+  }: {
+    id: string;
+  }): Promise<any>;
+}
+//#endregion
+export { PrismaContractor };

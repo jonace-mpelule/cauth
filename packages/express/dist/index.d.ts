@@ -1,7 +1,8 @@
+import { NextFunction, Request, Response } from "express";
 import z$1, { z } from "zod";
 import ms from "ms";
 
-//#region src/types/auth.t.d.ts
+//#region ../core/src/types/auth.t.d.ts
 type Account = {
   id: string;
   phoneNumber: string;
@@ -31,66 +32,15 @@ declare const AuthModelSchema: z$1.ZodObject<{
 }, z$1.core.$strip>;
 type AuthModel = z$1.infer<typeof AuthModelSchema>;
 //#endregion
-//#region src/errors/errors.d.ts
+//#region ../core/src/errors/errors.d.ts
 type CAuthErrorShape = {
   type: string;
   message: string;
   code: string | number;
   name: string;
 };
-declare const CAuthErrors: {
-  /** @description Error thrown when the credentials provided do not match. */
-  CredentialMismatchError: {
-    type: "credential-error";
-    message: "Credential mismatch. Please check your credentials and try again.";
-    code: "credential-mismatch";
-    name: "CredentialMismatchError";
-  };
-  /** @description Error thrown when the data provided is invalid. */
-  InvalidDataError: (reason: string) => CAuthErrorShape;
-  /** @description Error thrown when the account is not found. */
-  AccountNotFoundError: {
-    type: "invalid-data-error";
-    message: "Account not found";
-    code: "account-not-found";
-    name: "AccountNotFoundError";
-  };
-  /** @description Error thrown when the role provided is invalid. */
-  InvalidRoleError: (roles: string[]) => CAuthErrorShape;
-  /** @description Error thrown when an invalid or expired refresh token is provided */
-  InvalidRefreshTokenError: {
-    type: "validation-error";
-    message: "Invalid refresh token";
-    code: "invalid-refresh-token";
-    name: "InvalidRefreshTokenError";
-  };
-  /** @description Error thrown when trying to create an account that already exists */
-  DuplicateAccountError: {
-    type: "validation-error";
-    message: "Account with this credentials already exists";
-    code: "account-already-exists";
-    name: "DuplicateAccountError";
-  };
-  /** @description Error thrown when an invalid or expired OTP is provided */
-  InvalidOTPCode: {
-    type: "validation-error";
-    message: "Invalid Otp. Please check and try again";
-    code: "invalid-otp";
-    name: "InvalidOTPCode";
-  };
-  /** @description Error thrown when CAuth Schema error */
-  SchemaInvalidError: {
-    type: "validation-error";
-    message: "Your database error is not is sync with CAuth Spec";
-    code: "schema-validation";
-    name: string;
-  };
-};
-type CAuthErrorObject = ReturnType<Extract<(typeof CAuthErrors)[keyof typeof CAuthErrors], (...args: any) => any>> | Extract<(typeof CAuthErrors)[keyof typeof CAuthErrors], object>;
-declare function isCAuthError(err: unknown, name: keyof typeof CAuthErrors): err is CAuthErrorObject;
-declare function is(err: unknown, name: keyof typeof CAuthErrors): boolean;
 //#endregion
-//#region src/types/result.t.d.ts
+//#region ../core/src/types/result.t.d.ts
 type FNError = {
   error: CAuthErrorShape;
 };
@@ -107,10 +57,10 @@ type Result<T, E extends FNError = FNError> = {
   errors: E[];
 };
 //#endregion
-//#region src/types/otp-purpose.t.d.ts
+//#region ../core/src/types/otp-purpose.t.d.ts
 type OtpPurpose = 'LOGIN' | 'RESET_PASSWORD' | 'ACTION';
 //#endregion
-//#region src/types/database.contract.d.ts
+//#region ../core/src/types/database.contract.d.ts
 interface DatabaseContract {
   findAccountById<T = AuthModel>({
     ...args
@@ -184,44 +134,7 @@ interface DatabaseContract {
   }): Promise<T>;
 }
 //#endregion
-//#region src/types/routes.contract.t.d.ts
-type RouteDeps = {
-  config: CAuthOptions;
-  tokens: _CAuth<any>['Tokens'];
-};
-type AuthGuardDeps = {
-  config: CAuthOptions;
-  tokens: _CAuth<any>['Tokens'];
-  roles?: Array<string>;
-};
-/**
- * Generic RoutesContract
- * THandler is generic, defaults to any function
- */
-interface RoutesContract<THandler extends (...args: any[]) => any = (...args: any[]) => any> {
-  Login({
-    ...config
-  }: RouteDeps): THandler;
-  Register({
-    ...config
-  }: RouteDeps): THandler;
-  Logout({
-    ...config
-  }: RouteDeps): THandler;
-  Guard({
-    ...config
-  }: AuthGuardDeps): THandler;
-  Refresh({
-    ...config
-  }: AuthGuardDeps): THandler;
-  ChangePassword({
-    ...config
-  }: RouteDeps & {
-    userId: string;
-  }): THandler;
-}
-//#endregion
-//#region src/types/config.t.d.ts
+//#region ../core/src/types/config.t.d.ts
 declare const CAuthOptionsSchema: z$1.ZodObject<{
   dbContractor: z$1.ZodCustom<DatabaseContract, DatabaseContract>;
   routeContractor: z$1.ZodCustom<RoutesContract<(...args: any[]) => any>, RoutesContract<(...args: any[]) => any>>;
@@ -239,7 +152,7 @@ declare const CAuthOptionsSchema: z$1.ZodObject<{
 }, z$1.core.$strip>;
 type CAuthOptions = z$1.infer<typeof CAuthOptionsSchema>;
 //#endregion
-//#region src/types/dto-schemas.t.d.ts
+//#region ../core/src/types/dto-schemas.t.d.ts
 declare const LoginSchema: z.ZodUnion<readonly [z.ZodObject<{
   email: z.ZodEmail;
   phoneNumber: z.ZodOptional<z.ZodNever>;
@@ -304,7 +217,7 @@ declare const ChangePasswordSchema: z.ZodObject<{
 }, z.core.$strip>;
 type ChangePasswordSchemaType = z.infer<typeof ChangePasswordSchema>;
 //#endregion
-//#region src/cauth.d.ts
+//#region ../core/src/cauth.d.ts
 declare class _CAuth<T extends string[], TContractor extends RoutesContract<any> = RoutesContract<any>> {
   #private;
   constructor(config: Omit<CAuthOptions, 'roles'> & {
@@ -382,12 +295,75 @@ declare class _CAuth<T extends string[], TContractor extends RoutesContract<any>
     VerifyAccessToken: <R>(token: any) => Promise<R | null>;
   };
 }
-/**
- * return typed instance of `_CAuth` while preserving contractor type.
- */
-declare function CAuth<const T extends string[], const TContractor extends RoutesContract<any>>(options: Omit<CAuthOptions, 'roles'> & {
-  roles: T;
-  routeContractor: TContractor;
-}): _CAuth<T, TContractor>;
 //#endregion
-export { CAuth, CAuthErrors, type CAuthOptions, type DatabaseContract, type RoutesContract, is, isCAuthError };
+//#region ../core/src/types/routes.contract.t.d.ts
+type RouteDeps = {
+  config: CAuthOptions;
+  tokens: _CAuth<any>['Tokens'];
+};
+type AuthGuardDeps = {
+  config: CAuthOptions;
+  tokens: _CAuth<any>['Tokens'];
+  roles?: Array<string>;
+};
+/**
+ * Generic RoutesContract
+ * THandler is generic, defaults to any function
+ */
+interface RoutesContract<THandler extends (...args: any[]) => any = (...args: any[]) => any> {
+  Login({
+    ...config
+  }: RouteDeps): THandler;
+  Register({
+    ...config
+  }: RouteDeps): THandler;
+  Logout({
+    ...config
+  }: RouteDeps): THandler;
+  Guard({
+    ...config
+  }: AuthGuardDeps): THandler;
+  Refresh({
+    ...config
+  }: AuthGuardDeps): THandler;
+  ChangePassword({
+    ...config
+  }: RouteDeps & {
+    userId: string;
+  }): THandler;
+}
+//#endregion
+//#region src/express.contractor.d.ts
+type OptionalNextHandler = (req: Request, res: Response, next?: NextFunction) => any;
+declare class ExpressContractor<THandler extends (...args: any[]) => any = OptionalNextHandler> implements RoutesContract<THandler> {
+  Register: ({
+    config,
+    tokens
+  }: RouteDeps) => THandler;
+  Login: ({
+    config,
+    tokens
+  }: RouteDeps) => THandler;
+  Logout: ({
+    config,
+    tokens
+  }: RouteDeps) => THandler;
+  Refresh: ({
+    config,
+    tokens
+  }: RouteDeps) => THandler;
+  ChangePassword: ({
+    config,
+    tokens,
+    userId
+  }: RouteDeps & {
+    userId: string;
+  }) => THandler;
+  Guard: ({
+    config,
+    tokens,
+    roles
+  }: AuthGuardDeps) => THandler;
+}
+//#endregion
+export { ExpressContractor };
