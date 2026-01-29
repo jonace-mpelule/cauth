@@ -7,6 +7,7 @@ import {
 	type RefreshTokenSchemaType,
 } from '../types/dto-schemas.t.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
+import { verifyRefreshToken } from '../utils/hmac-util.ts';
 import { tryCatch } from '../utils/tryCatch.ts';
 import { formatZodIssues } from '../utils/zod-joined-issues.ts';
 
@@ -22,7 +23,7 @@ type RefreshSuccess = {
 
 export async function RefreshFn(
 	{ config, tokens }: RefreshDeps,
-	{ ...args }: RefreshTokenSchemaType,
+	{...args} : RefreshTokenSchemaType,
 ): Promise<Result<RefreshSuccess>> {
 	const out = RefreshTokenSchema.safeParse(args);
 
@@ -32,7 +33,8 @@ export async function RefreshFn(
 		});
 	}
 
-	const payload = await tryCatch(
+  const payload = await tryCatch(
+    // TODO: Change this to Refresh Token
 		tokens.VerifyRefreshToken<{ id: string }>(args.refreshToken),
 	);
 
@@ -52,7 +54,9 @@ export async function RefreshFn(
 		});
 	}
 
-	if (!account?.refreshTokens?.includes(args.refreshToken)) {
+
+
+  if (!account?.refreshTokens?.some((r) => verifyRefreshToken({ incomingToken: args.refreshToken, storedHash: r.token, refreshTokenSecret:config.jwtConfig.refreshTokenSecret}))) {
 		return fail({
 			error: CAuthErrors.InvalidRefreshTokenError,
 		});
@@ -70,7 +74,7 @@ export async function RefreshFn(
 	});
 
 	// REMOVE PASSWORD AND REFRESH TOKENS
-	delete account.refreshTokens;
+	delete (account as any).refreshTokens;
 	delete account.passwordHash;
 
 	return ok({ account, tokens: tokenPair });

@@ -1,10 +1,8 @@
 import type { Request, Response } from 'express';
 import type { _CAuth } from '@/core/src/cauth.ts';
 import ErrorValues from '@/core/src/errors/errorValues.ts';
+import { RefreshFn } from '@/core/src/fn/refresh.fn';
 import type { CAuthOptions } from '@/core/src/types/config.t.ts';
-import { RefreshTokenSchema } from '@/core/src/types/dto-schemas.t.ts';
-import { tryCatch } from '@/core/src/utils/tryCatch.ts';
-import { formatZodIssues } from '@/core/src/utils/zod-joined-issues.ts';
 
 type RefreshDeps = {
 	config: CAuthOptions;
@@ -13,50 +11,37 @@ type RefreshDeps = {
 
 export function RefreshRoute({ config, tokens }: RefreshDeps) {
 	return async (req: Request, res: Response) => {
-		try {
-			const out = RefreshTokenSchema.safeParse(req.body);
-			if (!out.success) {
-				return res.status(400).send({
-					code: ErrorValues.InvalidData,
-					message: formatZodIssues(out),
-				});
-			}
-			const { refreshToken } = out.data;
+    try {
 
-			// VERIFY TOKEN
-			const payload = await tryCatch(
-				tokens.VerifyRefreshToken<{ id: string }>(refreshToken),
-			);
+      const result = await RefreshFn({
+        config: config,
+        tokens: tokens,
+      }, {refreshToken: req.body.refreshToken})
 
-			if (payload.error || !payload.data)
-				return res.status(401).send({ code: ErrorValues.InvalidToken });
 
-			const account = await config.dbContractor.findAccountById({
-				id: payload.data.id,
-			});
+      if (!result.success) {
+        const firstError = result.errors[0].error;
+        let status = 400;
 
-			if (!account) {
-				return res.status(404).send({ code: ErrorValues.AccountNotFound });
-			}
-			// CHECK THAT REFRESH TOKEN EXISTS IN DB
-			if (!account?.refreshTokens?.includes(refreshToken)) {
-				return res.status(401).send({ code: ErrorValues.InvalidToken });
-			}
+        if (firstError.code === ErrorValues.InvalidRefreshToken || firstError.code === ErrorValues.AccountNotFound) {
+          status = 401
+        }
 
-			// GENERATE NEW PAIR
-			const tokenPair = await tokens.GenerateTokenPairs({
-				id: account.id,
-				role: account.role,
-			});
+        if (firstError.code === ErrorValues.ServerError) {
+          status = 500
+        }
 
-			// UPDATE DB WITH NEW REFRESH TOKEN (PUSH & REMOVE OLD)
-			await config.dbContractor.removeAndAddRefreshToken({
-				id: account.id,
-				refreshToken,
-				newRefreshToken: tokenPair.refreshToken,
-			});
+        return res.status(status).send({
+          code: firstError.code,
+          message: firstError.message,
+        });
 
-			return res.status(200).send({ tokens: tokenPair });
+      }
+
+      return res.status(200).send({
+        tokens: result.value.tokens
+      })
+
 		} catch (err) {
 			console.error('Refresh token error:', err);
 			return res.status(500).send({ code: ErrorValues.ServerError });

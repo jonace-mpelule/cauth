@@ -1,25 +1,31 @@
 # @cauth/core
 
-Core authentication library for Node.js applications with TypeScript support.
+[![NPM Version](https://img.shields.io/npm/v/@cauth/core.svg)](https://www.npmjs.com/package/@cauth/core)
+[![License](https://img.shields.io/npm/l/@cauth/core.svg)](https://github.com/jonace-mpelule/cauth/blob/main/LICENSE)
 
-## Features
+**CAuth Core** is a robust, type-safe authentication library for Node.js, built with TypeScript and Zod. It provides a modular foundation for building secure authentication systems with pluggable database and route handlers.
 
-- **Type-Safe Authentication**: Built with TypeScript and Zod validation
-- **JWT-Based Authentication**: Access and refresh token management
-- **Role-Based Access Control**: Flexible role management system
-- **Multi-Factor Authentication**: OTP-based two-factor authentication
-- **Phone Number Support**: E.164 format validation using libphonenumber-js
-- **Error Handling**: Comprehensive error types and handling
-- **Modular Design**: Pluggable database and route contractors
-- **Secure Defaults**: Argon2 password hashing and hashed refresh tokens
+> [!IMPORTANT]
+> For more information and full documentation, visit **[cauth.dev](https://cauth.dev)**.
 
-## Security & Breaking Changes
+---
 
-- **Secure OTP Generation**: OTPs are now generated using `crypto.randomInt` for cryptographic security.
-- **Refresh Token Hashing**: Refresh tokens are now hashed before storage. **Existing refresh tokens in the database will be invalid.** Users will need to log in again.
-- **Password Hashing**: Standardized on `Bun.password` (Argon2). Existing bcrypt hashes are still supported for verification.
+## ✨ Features
 
-## Installation
+- **🛡️ Type-Safe**: Comprehensive TypeScript support with Zod schema validation.
+- **🔑 JWT-Based**: Industry-standard access and refresh token management.
+- **🎭 Role-Based Access Control (RBAC)**: Flexible, type-safe role management.
+- **📱 Multi-Factor Authentication**: Secure OTP generation for 2FA, password resets, and more.
+- **📞 Phone & Email Support**: E.164 phone validation and email support out of the box.
+- **🔒 Secure by Design**:
+  - **Argon2id**: State-of-the-art password hashing.
+  - **Hashed Refresh Tokens**: Protection against database leaks.
+  - **CSPRNG OTPs**: Cryptographically secure numeric codes.
+- **🧩 Modular Architecture**: Decoupled core logic from database (Prisma) and framework (Express).
+
+---
+
+## 🚀 Installation
 
 ```bash
 npm install @cauth/core
@@ -29,120 +35,120 @@ yarn add @cauth/core
 pnpm add @cauth/core
 ```
 
-## Quick Start
+---
+
+## 🏁 Quick Start
+
+Initialize CAuth by providing your database and route contractors, along with configuration for JWTs and roles.
 
 ```typescript
 import { CAuth } from '@cauth/core';
-import { PrismaProvider } from '@cauth/prisma';
+import { PrismaContractor } from '@cauth/prisma';
 import { ExpressContractor } from '@cauth/express';
+import { prisma } from './db';
 
-// Initialize authentication system
 const auth = CAuth({
-  roles: ['USER', 'ADMIN'],
-  dbContractor: new PrismaProvider(prismaClient),
+  // Define your application roles
+  roles: ['USER', 'ADMIN', 'EDITOR'] as const,
+  
+  // Pluggable contractors
+  dbContractor: new PrismaContractor(prisma),
   routeContractor: new ExpressContractor(),
+
   jwtConfig: {
     accessTokenSecret: process.env.ACCESS_TOKEN_SECRET!,
     refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET!,
-    accessTokenLifeSpan: '15m',
+    accessTokenLifeSpan: '15m',   // ms, string (ms format), or number
     refreshTokenLifeSpan: '7d',
   },
+
   otpConfig: {
-    expiresIn: 300000, // 5 minutes
-    length: 6, // 6-digit OTP codes
+    expiresIn: 300000, // 5 minutes in ms
+    length: 6,         // 6-digit codes
   },
 });
 
-// Use authentication functions
+export default auth;
+```
+
+### Basic Login Example
+
+```typescript
 const result = await auth.FN.Login({
-  email: 'user@example.com',
-  //or phoneNumber: '+2659900000'
-  password: 'securepassword123',
+  email: 'dev@example.com',
+  password: 'SecurePassword123!',
 });
 
 if (result.success) {
-  console.log('Login successful:', result.value);
+  console.log('Tokens:', result.value); // { accessToken, refreshToken, user }
 } else {
-  console.log('Login failed:', result.errors); // FNErrors[]
+  console.error('Errors:', result.errors); // Array of FNError objects
 }
 ```
 
-## Core Components
+---
 
-### Authentication Functions
+## 📖 Core Concepts
 
-The `FN` namespace provides these authentication functions:
+### 1. Functional Namespace (`FN`)
+The `FN` namespace contains the core business logic functions. These are framework-agnostic and can be used in CLI tools, background jobs, or custom route handlers.
 
-```typescript
-auth.FN.Login({ email?: string, phoneNumber?: string, password: string })
-auth.FN.Register({ email?: string, phoneNumber?: string, password: string, role: string })
-auth.FN.Logout({ refreshToken: string })
-auth.FN.Refresh({ refreshToken: string })
-auth.FN.ChangePassword({ oldPassword: string, newPassword: string })
-auth.FN.RequestOTPCode({ email?: string, phoneNumber?: string, otpPurpose: OtpPurpose })
-auth.FN.LoginWithOTP({ email?: string, phoneNumber?: string, code: string })
-auth.FN.VerifyOTP({ id: string, code: string, otpPurpose: OtpPurpose })
-```
+- `auth.FN.Register(data)`: Create new accounts.
+- `auth.FN.Login(credentials)`: Authenticate and get tokens.
+- `auth.FN.Logout({ refreshToken })`: Revoke a session.
+- `auth.FN.Refresh({ refreshToken })`: Get a new access token.
+- `auth.FN.ChangePassword(data)`: Update password with old password verification.
+- `auth.FN.RequestOTPCode(data)`: Generate and send (via callback) an OTP.
+- `auth.FN.LoginWithOTP(data)`: Passwordless login via code.
 
-### Token Management
-
-The `Tokens` namespace provides these utilities:
+### 2. Routes Namespace (`Routes`)
+The `Routes` namespace provides pre-built handlers for your chosen framework (e.g., Express). These wrap the `FN` logic and handle HTTP plumbing (status codes, body parsing).
 
 ```typescript
-auth.Tokens.GenerateAccessToken(payload: any): Promise<string>
-auth.Tokens.GenerateRefreshToken(payload: any): Promise<string>
-auth.Tokens.GenerateTokenPairs(payload: any): Promise<{ accessToken: string, refreshToken: string }>
-auth.Tokens.VerifyAccessToken<T>(token: string): Promise<T | null>
-auth.Tokens.VerifyRefreshToken<T>(token: string): Promise<T | null>
+// Express example
+app.post('/auth/register', auth.Routes.Register());
+app.post('/auth/login', auth.Routes.Login());
 ```
 
-## Configuration
-
-The `CAuthOptions` interface defines the configuration:
+### 3. Middleware (`Guard`)
+Protect your routes with type-safe RBAC.
 
 ```typescript
-interface CAuthOptions {
-  dbContractor: DatabaseContract;
-  routeContractor: RoutesContract;
-  roles: string[];
-  jwtConfig: {
-    refreshTokenSecret: string;
-    accessTokenSecret: string;
-    accessTokenLifeSpan?: string | number; // ms string or number
-    refreshTokenLifeSpan?: string | number; // ms string or number
-  };
-  otpConfig?: {
-    expiresIn?: number; // milliseconds, default: 300000 (5 minutes)
-    length?: number; // 4-8 digits, default: 6
-  };
-}
+// Only Admins can access this
+app.get('/admin/stats', auth.Guard(['ADMIN']), (req, res) => {
+  console.log('Admin ID:', req.cauth.id);
+  res.send('Secret data');
+});
 ```
 
-## Error Types
+---
 
-The library provides these error types:
+## 🔒 Security Considerations
 
-- `CredentialMismatchError`: Invalid login credentials
-- `InvalidDataError`: Validation failures
-- `AccountNotFoundError`: Account not found
-- `InvalidRoleError`: Invalid role assignment
-- `InvalidRefreshTokenError`: Invalid/expired refresh token
-- `DuplicateAccountError`: Account already exists
-- `InvalidOTPCode`: Invalid/expired OTP code
+### Password Hashing
+CAuth uses **Argon2id**, the winner of the Password Hashing Competition. It provides excellent resistance against GPU/ASIC cracking and side-channel attacks.
 
-## Development
+### Refresh Token Security
+Refresh tokens are stored as **HMAC hashes** in your database. Even if your database is compromised, attackers cannot use the stored hashes to generate valid refresh tokens.
 
-### Prerequisites
+### OTP Generation
+OTPs are generated using `node:crypto`'s `randomInt`, ensuring they are not predictable by attackers.
 
-- Node.js >= 18
-- TypeScript >= 5.9
+---
 
+## 🛠️ API Reference
 
+### `CAuthOptions`
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `dbContractor` | `DatabaseContract` | Implementation of database logic (e.g., `PrismaContractor`). |
+| `routeContractor` | `RoutesContract` | Implementation of framework logic (e.g., `ExpressContractor`). |
+| `roles` | `string[]` | Array of valid role strings. |
+| `jwtConfig` | `JWTConfig` | Secret keys and lifespans for tokens. |
+| `otpConfig` | `OTPConfig` | (Optional) Expiry and length for OTP codes. |
 
-## License
+---
 
-MIT License - see LICENSE file for details.
+## 📄 License
 
-## Support
-
-For issues and feature requests, please visit the [GitHub repository](https://github.com/jonace-mpelule/cauth).
+MIT © [Jonace Mpelule](https://github.com/jonace-mpelule)

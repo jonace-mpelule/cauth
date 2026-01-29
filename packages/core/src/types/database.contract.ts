@@ -1,8 +1,10 @@
+import type { _CAuth } from '../cauth.ts';
 import type { AuthModel } from './auth.t.ts';
 import type { CAuthOptions } from './config.t.ts';
 import type { OtpPurpose } from './otp-purpose.t.ts';
 
 export interface DatabaseContract {
+
 	findAccountById<T = AuthModel>({
 		...args
 	}: {
@@ -30,7 +32,7 @@ export interface DatabaseContract {
 	}: {
 		id: string;
 		data: any;
-		select?: any;
+    select?: any;
 	}): Promise<T>;
 
 	updateAccountLogin<T = AuthModel>({
@@ -38,7 +40,8 @@ export interface DatabaseContract {
 	}: {
 		id: string;
 		refreshToken: string;
-		select?: any;
+    select?: any;
+    config: CAuthOptions
 	}): Promise<T>;
 
 	removeAndAddRefreshToken({

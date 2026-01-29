@@ -11,37 +11,36 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-// model Auth {
-//   id            String   @id @default(uuid())
-//   phoneNumber   String?  @unique
-//   email         String?  @unique
-//   passwordHash  String
-//   role          String
-//   lastLogin     DateTime
-//   otp           Otp?     @relation
-//   refreshTokens String[]
-//   createdAt     DateTime @default(now())
-//   updatedAt     DateTime @updatedAt
-//   otpId         String
-// }
+model Auth {
+  id            String   @id @default(uuid())
+  phoneNumber   String?  @unique
+  email         String?  @unique
+  passwordHash  String
+  role          String
+  lastLogin     DateTime
+  otp           Otp?     @relation
+  refreshTokens Json[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  otpId         String
+}
 
-// model Otp {
-//   id        String     @id @default(uuid())
-//   auth      Auth       @relation(fields: [id], references: [id])
-//   code      String
-//   purpose   OtpPurpose
-//   expiresAt DateTime
-//   isUsed    Boolean
-//   createdAt DateTime   @default(now())
-//   updatedAt DateTime   @updatedAt
-// }
+model Otp {
+  id        String     @id @default(uuid())
+  auth      Auth       @relation(fields: [id], references: [id])
+  code      String
+  purpose   OtpPurpose
+  expiresAt DateTime
+  isUsed    Boolean
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
 
 // // ADD AS MANY PURPOSES YOU WISH, BUT DON'T REMOVE RESET_PASSWORD AND LOGIN
-// enum OtpPurpose {
-//   LOGIN
-//   RESET_PASSWORD
-//   ACTION
-// }
+enum OtpPurpose {
+  LOGIN
+  RESET_PASSWORD
+  ACTION
+}

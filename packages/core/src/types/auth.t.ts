@@ -22,7 +22,10 @@ export const AuthModelSchema = z.object({
 	passwordHash: z.string().optional(),
 	role: z.string(),
 	lastLogin: z.date(),
-	refreshTokens: z.string().array().optional(),
+  refreshTokens: z.object({
+    token: z.string(),
+    exp: z.coerce.number()
+	}).array(),
 	createdAt: z.date(),
 	updatedAt: z.date(),
 });

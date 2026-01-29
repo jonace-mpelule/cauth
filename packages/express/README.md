@@ -1,145 +1,117 @@
 # @cauth/express
 
-Express integration for CAuth authentication system.
+[![NPM Version](https://img.shields.io/npm/v/@cauth/express.svg)](https://www.npmjs.com/package/@cauth/express)
 
-## Features
+**CAuth Express** provides seamless integration between the CAuth core authentication system and Express.js applications. It includes type-safe route handlers, middleware, and request augmentation.
 
-- **Express Integration**: Seamless integration with Express.js applications
-- **Type-Safe Routes**: TypeScript support for route handlers
-- **Authentication Middleware**: Ready-to-use authentication guard
-- **Request Augmentation**: Typed user data in request object
-- **Error Handling**: Express-compatible error handling
+> [!IMPORTANT]
+> For more information and full documentation, visit **[cauth.dev](https://cauth.dev)**.
 
-## Security Updates
+---
 
-- **Refactored Routes**: Routes now use the core `FN` functions directly for consistent security logic.
-- **Error Handling**: Standardized error mapping for security-related errors.
+## ✨ Features
 
-## Installation
+- **🚀 Express Optimized**: Plug-and-play middleware and route handlers.
+- **🛡️ Type-Safe Guard**: Protect routes with RBAC that knows your roles.
+- **📦 Request Augmentation**: Automatically injects `req.cauth` with user session data.
+- **🧩 Flexible**: Use pre-built routes or call core `FN` functions manually.
+- **🛡️ Standardized Errors**: Automatically maps core errors to appropriate HTTP status codes.
+
+---
+
+## 🚀 Installation
 
 ```bash
 npm install @cauth/express @cauth/core
 # or
 yarn add @cauth/express @cauth/core
-# or
-pnpm add @cauth/express @cauth/core
 ```
 
-## Quick Start
+---
+
+## 🏁 Quick Start
+
+1. Initialize your CAuth client (see `@cauth/core` for full config).
+2. Attach the generated routes and middleware to your Express app.
 
 ```typescript
 import express from 'express';
-import { CAuth } from '@cauth/core';
-import { ExpressContractor, Guard } from '@cauth/express';
-import { PrismaContractor } from '@cauth/prisma';
+import auth from './auth'; // Your initialized CAuth instance
 
 const app = express();
 app.use(express.json());
 
-// Initialize CAuth with Express contractor
-const CAuthClient = CAuth({
-  dbContractor: new PrismaContractor(prismaClient),
-  routeContractor: new ExpressContractor(),
-  roles: ['USER', 'ADMIN'],
-  jwtConfig: {
-    accessTokenSecret: process.env.ACCESS_TOKEN_SECRET!,
-    refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET!,
-  }
+// 1. Mount pre-built authentication routes
+app.post('/auth/register', auth.Routes.Register());
+app.post('/auth/login', auth.Routes.Login());
+app.post('/auth/refresh', auth.Routes.Refresh());
+app.post('/auth/logout', auth.Routes.Logout());
+
+// 2. Protect routes with the Guard middleware
+app.get('/me', auth.Guard(), (req, res) => {
+  // Access typed user data from req.cauth
+  res.json({ user: req.cauth });
 });
 
-//  authentication routes
-app.post('/register', CAuthClient.Routes.Register())
-
-app.post('/login', CAuthClient.Routes.Login())
-
-// Using the Guard to extract the id from the user's request
-app.post('/change-password', CAuthClient.Guard(),  (req: Request, res: Response) => CAuth.Guard(), CAuthClient.Routes.ChangePassword(req.cauth?.id!)(req, res))
-
-
-app.post('/refresh', CAuthClient.Routes.Refresh())
-
-app.post('/logout', CAuthClient.Routes.Logout())
-
-app.post('/login-with-code', async (req: Request, res: Response) => {
-    const result = await CAuthClient.FN.LoginWithOTP({ phoneNumber: req.body.phone, code: req.body.code })
-
-    return res.send(result)
-
-})
-
-// Protected route example
-app.get('/protected', CAuthClient.Guard(), (req, res) => {
-  // User data is available in req.user
-  res.json({ message: 'Protected data', user: req.user });
+// 3. Role-based protection
+app.get('/admin', auth.Guard(['ADMIN']), (req, res) => {
+  res.json({ message: 'Welcome, Admin!' });
 });
 
-// Role-based protection
-app.get('/admin', Guard(['ADMIN']), (req, res) => {
-  res.json({ message: 'Admin only', user: req.user });
+// 4. Manual usage in custom routes
+app.post('/auth/reset-password', async (req, res) => {
+  const result = await auth.FN.RequestOTPCode({
+    email: req.body.email,
+    otpPurpose: 'RESET_PASSWORD',
+    onCode: (code) => {
+       // Logic to send code via email
+       console.log(`OTP Code: ${code}`);
+    }
+  });
+  
+  res.status(result.success ? 200 : 400).send(result);
 });
 
-app.listen(3000, () => {
-  console.log('Server running on port 3000');
-});
+app.listen(3000);
 ```
 
-## API Reference
+---
 
+## 📖 API Reference
 
-### Guard Middleware
+### `auth.Guard(roles?: string[])`
+A middleware that verifies the Access Token in the `Authorization` header (`Bearer <token>`).
 
-The `Guard` middleware protects routes and adds user data to the request object:
+- If no roles are provided, it only checks for a valid session.
+- If roles are provided, it checks if the user has one of the specified roles.
+- Injects `req.cauth` with `{ id: string, role: string }`.
 
-```typescript
-// Protect route for authenticated users
-app.get('/profile', CAuthCliebt.Guard(), (req, res) => {
-  const data = req.cauth; // TypeScript knows user exists
-  res.json({ user });
-});
+### `auth.Routes`
+A collection of pre-configured Express route handlers:
 
-// Protect route for specific roles
-app.get('/admin', Guard(['ADMIN']), (req, res) => {
-  res.json({ message: 'Admin access granted' });
-});
-```
+- **Register**: `POST` handler for user creation.
+- **Login**: `POST` handler for credentials-based auth.
+- **Logout**: `POST` handler that revokes refresh tokens.
+- **Refresh**: `POST` handler for rotating access tokens.
+- **ChangePassword**: `POST` handler for updating passwords (requires `userId`).
 
-### Request Object
+---
 
-The middleware augments the Express `Request` object with user data:
+## 🔒 Error Mapping
 
-```typescript
-interface AuthenticatedRequest extends Request {
-  cauth: {
-    id: string;
-    role: string;
-  };
-}
-```
+CAuth Express automatically maps core errors to HTTP status codes:
 
-### Error Handling
+| Core Error | HTTP Status |
+| :--- | :--- |
+| `CredentialMismatchError` | 401 Unauthorized |
+| `InvalidDataError` | 400 Bad Request |
+| `AccountNotFoundError` | 404 Not Found |
+| `InvalidRoleError` | 403 Forbidden |
+| `DuplicateAccountError` | 409 Conflict |
+| `InvalidOTPCode` | 422 Unprocessable Entity |
 
-Common error status codes:
+---
 
-- 400: Invalid request data
-- 401: Unauthorized (invalid credentials)
-- 403: Forbidden (insufficient permissions)
-- 404: Account not found
-- 409: Duplicate account
-- 422: Invalid OTP code
+## 📄 License
 
-## Development
-
-### Prerequisites
-
-- Node.js >= 18
-- TypeScript >= 5.9
-- Express.js >= 4.18
-
-
-## License
-
-MIT License - see LICENSE file for details.
-
-## Support
-
-For issues and feature requests, please visit the [GitHub repository](https://github.com/jonace-mpelule/cauth).
+MIT © [Jonace Mpelule](https://github.com/jonace-mpelule)

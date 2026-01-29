@@ -1,11 +1,11 @@
 import type { _CAuth } from '@core/cauth.ts';
-import Bun from 'bun';
 import type { CAuthOptions } from '@/core/src/types/config.t.ts';
 import { CAuthErrors } from '../errors/errors.ts';
 import type { Account, Tokens } from '../types/auth.t.ts';
 import { LoginSchema, type LoginSchemaType } from '../types/dto-schemas.t.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
 import { formatZodIssues } from '../utils/zod-joined-issues.ts';
+import argon2 from "argon2";
 
 type loginDeps = {
 	config: CAuthOptions;
@@ -40,7 +40,7 @@ export async function LoginFn(
 		});
 	}
 
-	const passwordMatch = await Bun.password.verify(
+	const passwordMatch = await argon2.verify(
 		String(args.password),
 		String(account?.passwordHash),
 	);
@@ -58,11 +58,12 @@ export async function LoginFn(
 
 	await config.dbContractor.updateAccountLogin({
 		id: account.id,
-		refreshToken: tokenPair.refreshToken,
+    refreshToken: tokenPair.refreshToken,
+    config
 	});
 
 	delete account.passwordHash;
-	delete account.refreshTokens;
+	delete (account as any).refreshTokens;
 
 	return ok({
 		account,

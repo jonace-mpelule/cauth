@@ -1,3 +1,4 @@
+import argon2 from 'argon2';
 import type { _CAuth } from '@/core/src/cauth.ts';
 import Strings from '@/core/src/helpers/strings.ts';
 import type { CAuthOptions } from '@/core/src/types/config.t.ts';
@@ -7,11 +8,12 @@ import {
 	type RequestOTP
 } from '@/core/src/types/dto-schemas.t.ts';
 import { CAuthErrors } from '../errors/errors.ts';
-import { formatZodIssues } from '../utils/zod-joined-issues.ts';
 
 import type { Account, Tokens } from '../types/auth.t.ts';
 import type { OtpPurpose } from '../types/otp-purpose.t.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
+import { formatZodIssues } from '../utils/zod-joined-issues.ts';
+
 // Common Dep
 type AuthenticateDeps = {
 	config: CAuthOptions;
@@ -47,11 +49,11 @@ export async function RequestAuthCode(
 	}
 
 	// Optional password check
-	if (args.usePassword) {
-		const passwordMatch = await Bun.password.verify(
-			String(args.password),
-			String(account?.passwordHash),
-		);
+  if (args.usePassword) {
+    const passwordMatch = await argon2.verify(
+      String(args.password),
+      String(account?.passwordHash)
+    );
 
 		if (!passwordMatch) {
 			return fail({ error: CAuthErrors.CredentialMismatchError });
@@ -66,7 +68,9 @@ export async function RequestAuthCode(
 			id: account.id,
 			purpose: args.otpPurpose,
 		},
-	);
+  );
+
+	args.onCode(otp.code);
 
 	return ok({
 		id: account.id,
@@ -125,11 +129,12 @@ export async function LoginWithCode(
 
 	await config.dbContractor.updateAccountLogin({
 		id: account.id,
-		refreshToken: tokenPair.refreshToken,
+    refreshToken: tokenPair.refreshToken,
+    config
 	});
 
 	delete account.passwordHash;
-	delete account.refreshTokens;
+	delete (account as any).refreshTokens;
 
 	return ok({
 		account,

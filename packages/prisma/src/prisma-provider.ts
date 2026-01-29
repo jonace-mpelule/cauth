@@ -1,9 +1,15 @@
+import { randomInt } from 'node:crypto';
 import type { CAuthOptions } from '@core/types/config.t.ts';
 import type { DatabaseContract } from '@core/types/database.contract.ts';
-import Bun from "bun";
+import argon2 from 'argon2';
+import ms, { type StringValue } from 'ms';
 import type { AuthModel } from '@/core/src/types/auth.t.ts';
 import type { OtpPurpose } from '@/core/src/types/otp-purpose.t.ts';
-import { randomInt } from 'node:crypto';
+import type { RefreshTokenJson } from '@/core/src/types/refresh-token.t';
+import {
+	hashRefreshToken,
+	verifyRefreshToken,
+} from '@/core/src/utils/hmac-util.ts';
 
 export interface PrismaClientLike {
 	$connect: () => Promise<void>;
@@ -13,7 +19,8 @@ export interface PrismaClientLike {
 }
 
 export class PrismaContractor<TClient extends PrismaClientLike>
-	implements DatabaseContract {
+	implements DatabaseContract
+{
 	#client: TClient;
 
 	constructor(client: TClient) {
@@ -33,21 +40,16 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 		const otpLength = Math.min(Math.max(config?.otpConfig?.length ?? 6, 4), 8);
 
 		// Generate random numeric OTP
-		// Generate random numeric OTP
-		const code = Array.from({ length: otpLength }, () =>
-			randomInt(0, 10),
-		).join('');
+		const code = Array.from({ length: otpLength }, () => randomInt(0, 10)).join(
+			'',
+		);
 
 		// Calculate expiration time
 		const expiresInMs = config?.otpConfig?.expiresIn ?? 5 * 60 * 1000;
 		const expiresAt = new Date(Date.now() + expiresInMs);
 
 		// Hash the otp Code
-		const hashCode = await Bun.password.hash(code, {
-			algorithm: 'bcrypt',
-			cost: 10
-		})
-
+		const hashCode = await argon2.hash(code, { type: argon2.argon2id });
 
 		let otp: any;
 
@@ -96,7 +98,7 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 		if (!otp) {
 			return { isValid: false } as T;
 		}
-		const isMatch = await Bun.password.verify(args.code, otp.code)
+		const isMatch = await argon2.verify(args.code, otp.code);
 
 		if (!isMatch)
 			return {
@@ -155,25 +157,45 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 		refreshToken,
 		select,
 		newRefreshToken,
+		config,
 	}: {
 		id: string;
 		refreshToken: string;
 		select?: any;
 		newRefreshToken?: string;
+		config: CAuthOptions;
 	}): Promise<T> {
+		/**
+		 * Checking Account Id
+		 */
 		const account = await this.findAccountById<AuthModel | null>({ id });
+
 		if (!account) {
 			throw new Error(`account-not-found: ${id}`);
 		}
 
-		const hashedRefreshToken = await Bun.password.hash(refreshToken);
-		let updatedTokens = account?.refreshTokens?.filter(
-			(t: any) => !Bun.password.verifySync(refreshToken, t),
+		const hash = hashRefreshToken({
+			token: String(newRefreshToken),
+			refreshTokenSecret: config.jwtConfig.refreshTokenSecret,
+		});
+
+		const _newRefreshObj: RefreshTokenJson = {
+			token: hash,
+			exp: ms(config.jwtConfig.refreshTokenLifeSpan as StringValue),
+		};
+
+		// Go through tokens and remove the current one
+
+		let updatedTokens = account?.refreshTokens?.filter((t) =>
+			verifyRefreshToken({
+				incomingToken: refreshToken,
+				storedHash: t.token,
+				refreshTokenSecret: config.jwtConfig.refreshTokenSecret,
+			}),
 		);
 
 		if (newRefreshToken) {
-			const hashedNewRefreshToken = await Bun.password.hash(newRefreshToken);
-			updatedTokens?.push(hashedNewRefreshToken);
+			updatedTokens?.push(_newRefreshObj);
 			updatedTokens = Array.from(new Set(updatedTokens));
 		}
 
@@ -190,7 +212,19 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 		id: string;
 		refreshToken: string;
 		select?: any;
+		config: CAuthOptions;
 	}) {
+		// Create Refresh Token
+		const hash = hashRefreshToken({
+			token: args.refreshToken,
+			refreshTokenSecret: args.config.jwtConfig.refreshTokenSecret,
+		});
+
+		const _refreshObj: RefreshTokenJson = {
+			token: hash,
+			exp: ms(args.config.jwtConfig.refreshTokenLifeSpan as StringValue),
+		};
+
 		return (this.#client as any).auth.update({
 			where: {
 				id: args.id,
@@ -198,7 +232,7 @@ export class PrismaContractor<TClient extends PrismaClientLike>
 			data: {
 				lastLogin: new Date(),
 				refreshTokens: {
-					push: await Bun.password.hash(args.refreshToken),
+					push: _refreshObj,
 				},
 			},
 			select: args.select,

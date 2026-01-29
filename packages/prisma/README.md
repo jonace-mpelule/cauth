@@ -1,61 +1,72 @@
 # @cauth/prisma
 
-Prisma integration for CAuth authentication system.
+[![NPM Version](https://img.shields.io/npm/v/@cauth/prisma.svg)](https://www.npmjs.com/package/@cauth/prisma)
 
-## Features
+**CAuth Prisma** is the official database adapter for the CAuth authentication system. It provides a robust implementation of the `DatabaseContract` using Prisma Client.
 
-- **Prisma Integration**: Database provider for CAuth using Prisma
-- **Type Safety**: Full TypeScript support with Prisma Client
-- **Schema Support**: Ready-to-use Prisma schema for authentication
-- **Account Management**: User account CRUD operations
-- **Token Management**: Refresh token handling
-- **OTP Support**: One-time password functionality
+> [!IMPORTANT]
+> For more information and full documentation, visit **[cauth.dev](https://cauth.dev)**.
 
-## Installation
+---
+
+## ✨ Features
+
+- **🐘 Prisma Native**: Full support for Prisma 5+ and any database Prisma supports.
+- **🛡️ Secure Refresh Tokens**: Automatically handles HMAC hashing of refresh tokens.
+- **🔑 Argon2id Integration**: Works seamlessly with CAuth's Argon2id password hashing.
+- **📱 OTP Built-in**: Robust schema and logic for managing one-time passwords.
+- **🛠️ Type-Safe**: Fully typed database operations and results.
+
+---
+
+## 🚀 Installation
 
 ```bash
 npm install @cauth/prisma @cauth/core @prisma/client
 # or
 yarn add @cauth/prisma @cauth/core @prisma/client
-# or
-pnpm add @cauth/prisma @cauth/core @prisma/client
 ```
 
-## Quick Start
+---
 
-1. Add the authentication models to your Prisma schema:
+## 🏁 Quick Start
+
+### 1. Define the Schema
+
+Add the following models to your `schema.prisma` file. These models are required for CAuth to function.
 
 ```prisma
 model Auth {
-  id            String   @id @default(uuid())
+  id            String   @id @default(cuid())
   phoneNumber   String?  @unique
   email         String?  @unique
   role          String
   passwordHash  String
-  lastLogin     DateTime
-  refreshTokens String[]
+  lastLogin     DateTime @default(now())
+  refreshTokens Json[]   // Stores hashed refresh tokens and metadata
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  
+  // Relations (optional but recommended)
   user          User?
-  otp Otp?
+  otp           Otp?
 
   @@map("auth")
 }
 
 model Otp {
-  id        String     @id
+  id        String     @id // Same as Auth.id
   auth      Auth       @relation(fields: [id], references: [id])
-  code      String
+  code      String     // Argon2id hash of the numeric code
   purpose   OtpPurpose
   expiresAt DateTime
-  isUsed    Boolean
+  isUsed    Boolean    @default(false)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
   @@map("otp")
 }
 
-// ADD AS MANY PURPOSES YOU WISH, BUT DON'T REMOVE RESET_PASSWORD AND LOGIN
 enum OtpPurpose {
   LOGIN
   RESET_PASSWORD
@@ -63,25 +74,19 @@ enum OtpPurpose {
 }
 ```
 
-2. Generate Prisma Client:
-
-```bash
-npx prisma generate
-```
-
-3. Use with CAuth:
+### 2. Initialize the Contractor
 
 ```typescript
 import { PrismaClient } from '@prisma/client';
 import { CAuth } from '@cauth/core';
-import { PrismaProvider } from '@cauth/prisma';
+import { PrismaContractor } from '@cauth/prisma';
 import { ExpressContractor } from '@cauth/express';
 
 const prisma = new PrismaClient();
 
 const auth = CAuth({
   roles: ['USER', 'ADMIN'],
-  dbContractor: new PrismaProvider(prisma),
+  dbContractor: new PrismaContractor(prisma),
   routeContractor: new ExpressContractor(),
   jwtConfig: {
     accessTokenSecret: process.env.ACCESS_TOKEN_SECRET!,
@@ -90,52 +95,30 @@ const auth = CAuth({
 });
 ```
 
-## API Reference
+---
 
-### PrismaProvider
+## 🔒 Security Features
 
-The `PrismaProvider` class implements the `DatabaseContract` interface:
+### Refresh Token Hashing
+Unlike basic implementations that store refresh tokens in plaintext, `@cauth/prisma` stores an **HMAC hash** of the token. This ensures that even if your database is leaked, the active sessions cannot be hijacked.
 
-```typescript
-class PrismaProvider implements DatabaseContract {
-  constructor(prisma: PrismaClient);
+### OTP Security
+Numeric codes are never stored in the database. Instead, an **Argon2id hash** of the code is stored, providing the same level of security as passwords.
 
-  // Account Management
-  findAccountById<T>({ id, select }: { id: string; select?: any }): Promise<T | undefined>;
-  findAccountWithCredential<T>({ email, phoneNumber, select }: { email?: string; phoneNumber?: string; select?: any }): Promise<T | undefined>;
-  createAccount<T>({ data, select }: { data: any; select?: any }): Promise<T>;
-  updateAccount<T>({ id, data, select }: { id: string; data: any; select?: any }): Promise<T>;
-  deleteAccount({ id }: { id: string }): Promise<void>;
+---
 
-  // Token Management
-  updateAccountLogin<T>({ id, refreshToken, select }: { id: string; refreshToken: string; select?: any }): Promise<T>;
-  removeAndAddRefreshToken({ id, refreshToken, newRefreshToken, select }: { id: string; refreshToken: string; newRefreshToken?: string; select?: any }): Promise<any>;
+## 🛠️ API Reference
 
-  // OTP Management
-  createOTP<T>({ config }: { config: CAuthOptions }, { id, purpose }: { id: string; purpose: OtpPurpose }): Promise<T>;
-  verifyOTP<T>({ id, code, purpose }: { id: string; code: string; purpose: OtpPurpose }): Promise<T>;
-}
-```
+### `PrismaContractor(prisma: PrismaClient)`
+The primary class that implements the `DatabaseContract`. It handles:
 
-## Development
+- **Account CRUD**: Finding, creating, and updating auth accounts.
+- **Session Management**: Securely adding/removing/refreshing token hashes.
+- **OTP Lifecycle**: Generating CSPRNG codes and verifying them against hashes.
 
-### Prerequisites
+---
 
-- Node.js >= 18
-- TypeScript >= 5.9
-- Prisma >= 5.0
+## 📄 License
 
-### Building
+MIT © [Jonace Mpelule](https://github.com/jonace-mpelule)
 
-```bash
-pnpm install
-pnpm build
-```
-
-## License
-
-MIT License - see LICENSE file for details.
-
-## Support
-
-For issues and feature requests, please visit the [GitHub repository](https://github.com/jonace-mpelule/cauth).

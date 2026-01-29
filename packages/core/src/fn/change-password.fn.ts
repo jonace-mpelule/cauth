@@ -5,9 +5,10 @@ import {
 	type ChangePasswordSchemaType,
 } from '@/core/src/types/dto-schemas.t.ts';
 import { formatZodIssues } from '@/core/src/utils/zod-joined-issues.ts';
-import bcrypt from 'bcrypt';
 import { CAuthErrors } from '../errors/errors.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
+import argon2 from "argon2";
+
 
 type ChangePasswordDeps = {
 	config: CAuthOptions;
@@ -36,8 +37,9 @@ export async function ChangePasswordFn(
 		});
 	}
 
-	const passwordMatch = bcrypt.compare(
-		args.oldPassword,
+
+	const passwordMatch = await argon2.verify(
+		String(args.oldPassword),
 		String(account.passwordHash),
 	);
 
@@ -47,7 +49,10 @@ export async function ChangePasswordFn(
 		});
 	}
 
-	const newHash = await bcrypt.hash(args.newPassword, 10);
+  const newHash = await argon2.hash(args.newPassword, {
+    type: argon2.argon2id
+  })
+
 	await config.dbContractor.updateAccount({
 		id: account.id,
 		data: { passwordHash: newHash },

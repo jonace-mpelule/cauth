@@ -31,8 +31,7 @@ export function LoginRoute({ config, tokens }: loginDeps) {
 			}
 
 			return res.status(200).send(result.value);
-		} catch (err) {
-			console.error('Login error:', err);
+		} catch (_) {
 			return res.status(500).send({ code: ErrorValues.ServerError });
 		}
 	};

@@ -1,12 +1,13 @@
+import argon2 from 'argon2';
 import type { _CAuth } from '@/core/src/cauth.ts';
+import { CAuthErrors } from '@/core/src/errors/errors.ts';
 import type { CAuthOptions } from '@/core/src/types/config.t.ts';
 import {
 	RegisterSchema,
 	type RegisterSchemaType,
 } from '@/core/src/types/dto-schemas.t.ts';
-import { CAuthErrors } from '@/core/src/errors/errors.ts';
 import { formatZodIssues } from '@/core/src/utils/zod-joined-issues.ts';
-import Bun from 'bun';
+
 import type { Account, Tokens } from '../types/auth.t.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
 
@@ -53,10 +54,10 @@ export async function RegisterFn(
 		});
 	}
 
-	const passwordHash = await Bun.password.hash(String(args.password), {
-		algorithm: 'bcrypt',
-		cost: 10,
-	});
+	const passwordHash = await argon2.hash(String(args.password), {
+		type: argon2.argon2id
+	})
+
 
 	const account = await config.dbContractor.createAccount({
 		data: {
@@ -71,10 +72,12 @@ export async function RegisterFn(
 	const tokenPair = await tokens.GenerateTokenPairs({
 		id: account.id,
 		role: account.role,
-	});
+  });
+
 	await config.dbContractor.updateAccountLogin({
 		id: account.id,
-		refreshToken: tokenPair.refreshToken,
+    refreshToken: tokenPair.refreshToken,
+    config
 	});
 
 	return ok({ account, tokens: tokenPair });
