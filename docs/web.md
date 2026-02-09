@@ -1,185 +1,69 @@
-# CAuth Documentation
+# CAuth Documentation: The Source of Truth
 
-## Introduction
-
-CAuth is a modular authentication system for Node.js applications with TypeScript support. It provides a robust, type-safe, and flexible way to handle user authentication, including features like:
-
--   **Type-Safe Authentication**: Built with TypeScript and Zod validation.
--   **JWT-Based Authentication**: Secure access and refresh token management.
--   **Role-Based Access Control (RBAC)**: Flexible role management system.
--   **Multi-Factor Authentication**: OTP-based two-factor authentication.
--   **Phone Number Support**: E.164 format validation.
--   **Modular Design**: Pluggable database and route contractors.
+CAuth is a modular, type-safe, and developer-first authentication ecosystem for Node.js, built from the ground up with TypeScript and Zod. It decouples core authentication logic from database implementations and web frameworks using a "Contractor" pattern.
 
 ---
 
-## Instructions for AI Agents (Gemini)
+## 🤖 Instructions for AI Agents (Gemini)
 
 > [!IMPORTANT]
-> **Context for Gemini**: This file serves as the primary source of truth for implementing authentication using the `cauth` ecosystem. When generating code or answering questions related to `cauth`, please adhere to the following guidelines:
-
-1.  **Package Awareness**: `cauth` is split into multiple packages (`@cauth/core`, `@cauth/express`, `@cauth/prisma`). Always check which packages are relevant to the user's request.
-2.  **Type Safety**: Always prioritize TypeScript types. Use the provided interfaces and types (e.g., `CAuthOptions`, `AuthenticatedRequest`) to ensure type safety.
-3.  **Security Best Practices**:
-    -   Never hardcode secrets. Use environment variables for `accessTokenSecret` and `refreshTokenSecret`.
-    -   Ensure OTPs are generated using the secure methods provided by the library.
-    -   Always use the `Guard` middleware to protect private routes.
-4.  **Code Style**: Follow the examples provided in this document. Use `async/await` for asynchronous operations.
-5.  **Prisma Schema**: When setting up the database, ensure the `Auth` and `Otp` models are correctly defined in the Prisma schema as shown in the "Prisma Integration" section.
-6.  **Configuration**: When initializing `CAuth`, ensure all required configurations (roles, database contractor, route contractor, JWT config) are provided.
+> **Context for Gemini/AI**: This file is the primary reference for implementing `cauth`. Follow these rules strictly:
+> 1.  **Architecture**: `cauth` uses **Contractors**. Always initialize with a `dbContractor` (e.g., `@cauth/prisma`) and a `routeContractor` (e.g., `@cauth/express`).
+> 2.  **FN vs Routes**:
+>     -   Use `auth.FN` for programmatic logic (e.g., inside custom services).
+>     -   Use `auth.Routes` for pre-built HTTP handlers.
+> 3.  **Type Safety**: Never use `any`. Always leverage the inferred types from the `CAuth` instance, specifically the `roles` provided during initialization.
+> 4.  **OTP Handling**: OTP codes are *returned* by the `onCode` callback in `RequestOTPCode`. Ensure the implementing code handles the delivery (Email/SMS).
+> 5.  **Security**: Remind users that `accessTokenSecret` and `refreshTokenSecret` MUST be high-entropy strings from environment variables.
 
 ---
 
-## Core Package (`@cauth/core`)
+## 📦 Project Structure
 
-The core package provides the fundamental authentication logic, including token management, password hashing, and OTP generation.
-
-### Installation
-
-```bash
-npm install @cauth/core
-# or
-yarn add @cauth/core
-# or
-pnpm add @cauth/core
-```
-
-### Key Concepts
-
--   **CAuth Instance**: The main entry point for the library. It requires configuration for roles, database, routes, and JWTs.
--   **FN Namespace**: Contains core authentication functions like `Login`, `Register`, `Logout`, `Refresh`, `ChangePassword`, etc.
--   **Tokens Namespace**: Utilities for generating and verifying access and refresh tokens.
-
-### Configuration
-
-```typescript
-import { CAuth } from '@cauth/core';
-// ... other imports
-
-const auth = CAuth({
-  roles: ['USER', 'ADMIN'], // Define your roles here
-  dbContractor: new PrismaProvider(prismaClient), // See Prisma Integration
-  routeContractor: new ExpressContractor(), // See Express Integration
-  jwtConfig: {
-    accessTokenSecret: process.env.ACCESS_TOKEN_SECRET!,
-    refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET!,
-    accessTokenLifeSpan: '15m',
-    refreshTokenLifeSpan: '7d',
-  },
-  otpConfig: {
-    expiresIn: 300000, // 5 minutes
-    length: 6,
-  },
-});
-```
-
-### Authentication Functions (`auth.FN`)
-
--   `Login({ email?, phoneNumber?, password })`: Authenticates a user.
--   `Register({ email?, phoneNumber?, password, role })`: Registers a new user.
--   `Logout({ refreshToken })`: Invalidates a refresh token.
--   `Refresh({ refreshToken })`: Generates a new access token using a refresh token.
--   `ChangePassword({ oldPassword, newPassword })`: Updates the user's password.
--   `RequestOTPCode({ email?, phoneNumber?, otpPurpose })`: Generates and sends an OTP.
--   `LoginWithOTP({ email?, phoneNumber?, code })`: Authenticates using an OTP.
--   `VerifyOTP({ id, code, otpPurpose })`: Verifies an OTP code.
+CAuth is distributed as a monorepo containing:
+-   **`@cauth/core`**: The engine. Logic for tokens, hashing, and flow.
+-   **`@cauth/prisma`**: The database adapter (DatabaseContract).
+-   **`@cauth/express`**: The web framework adapter (RoutesContract).
 
 ---
 
-## Express Integration (`@cauth/express`)
+## 🚀 Getting Started
 
-This package provides seamless integration with Express.js, including middleware and route handlers.
-
-### Installation
+### 1. Installation
 
 ```bash
-npm install @cauth/express
+npm install @cauth/core @cauth/prisma @cauth/express @prisma/client
 ```
 
-### Usage
+### 2. Database Schema (Prisma)
 
-1.  **Initialize**: Pass `new ExpressContractor()` to the `routeContractor` option in `CAuth`.
-2.  **Routes**: Use `CAuthClient.Routes` to generate route handlers.
-3.  **Middleware**: Use `CAuthClient.Guard()` to protect routes.
-
-### Example
-
-```typescript
-import express from 'express';
-import { CAuth } from '@cauth/core';
-import { ExpressContractor } from '@cauth/express';
-
-const app = express();
-app.use(express.json());
-
-// ... Initialize CAuthClient ...
-
-// Auth Routes
-app.post('/auth/register', CAuthClient.Routes.Register());
-app.post('/auth/login', CAuthClient.Routes.Login());
-app.post('/auth/refresh', CAuthClient.Routes.Refresh());
-app.post('/auth/logout', CAuthClient.Routes.Logout());
-
-// Protected Route
-app.get('/protected', CAuthClient.Guard(), (req, res) => {
-  // req.cauth contains user info (id, role)
-  res.json({ message: 'Secret data', user: req.cauth });
-});
-```
-
-### Request Augmentation
-
-The `Guard` middleware adds a `cauth` property to the Express request object:
-
-```typescript
-interface AuthenticatedRequest extends Request {
-  cauth: {
-    id: string;
-    role: string;
-  };
-}
-```
-
----
-
-## Prisma Integration (`@cauth/prisma`)
-
-This package allows `cauth` to use Prisma as its database provider.
-
-### Installation
-
-```bash
-npm install @cauth/prisma @prisma/client
-```
-
-### Schema Setup
-
-Add the following models to your `schema.prisma` file:
+Add these core models to your `schema.prisma`. These are optimized for security (hashed OTPs, hashed refresh token storage).
 
 ```prisma
 model Auth {
-  id            String   @id @default(uuid())
+  id            String   @id @default(cuid())
   phoneNumber   String?  @unique
   email         String?  @unique
   role          String
   passwordHash  String
-  lastLogin     DateTime
-  refreshTokens String[]
+  lastLogin     DateTime @default(now())
+  refreshTokens Json[]   // Stores hashed rotation metadata
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  user          User?    // Optional relation to your User model
+  
+  user          User?    // Link to your application user
   otp           Otp?
 
   @@map("auth")
 }
 
 model Otp {
-  id        String     @id
+  id        String     @id // Same as Auth.id
   auth      Auth       @relation(fields: [id], references: [id])
-  code      String
+  code      String     // Argon2id hash of the code
   purpose   OtpPurpose
   expiresAt DateTime
-  isUsed    Boolean
+  isUsed    Boolean    @default(false)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -193,98 +77,377 @@ enum OtpPurpose {
 }
 ```
 
-### Usage
+### 3. Initialization
 
-Pass `new PrismaProvider(prismaClient)` to the `dbContractor` option in `CAuth`.
+Create an `auth.ts` file to export your configured instance.
 
 ```typescript
+import { CAuth } from '@cauth/core';
+import { PrismaContractor } from '@cauth/prisma';
+import { ExpressContractor } from '@cauth/express';
 import { PrismaClient } from '@prisma/client';
-import { PrismaProvider } from '@cauth/prisma';
 
 const prisma = new PrismaClient();
-// ... inside CAuth config
-dbContractor: new PrismaProvider(prisma),
+
+const auth = CAuth({
+  roles: ['USER', 'ADMIN', 'DEVELOPER'] as const, // Strongly typed roles
+  dbContractor: new PrismaContractor(prisma),
+  routeContractor: new ExpressContractor(),
+  
+  jwtConfig: {
+    accessTokenSecret: process.env.ACCESS_TOKEN_SECRET!,
+    refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET!,
+    accessTokenLifeSpan: '15m',   // Supports 'ms' format: '2h', '7d', etc.
+    refreshTokenLifeSpan: '30d',
+  },
+  
+  otpConfig: {
+    expiresIn: 300000, // 5 minutes (in ms)
+    length: 6,         // 4 to 8 digits
+  },
+});
+
+export default auth;
 ```
 
 ---
 
-## Complete Integration Example
+## 🛠️ Functional API (`auth.FN`)
 
-Here is a full example combining all packages:
+The `FN` namespace provides the raw business logic. Every function returns a `Result` object: `{ success: true, value: T }` or `{ success: false, errors: FNError[] }`.
+
+### Registration Variations
 
 ```typescript
-import express, { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { CAuth } from '@cauth/core';
-import { ExpressContractor, Guard } from '@cauth/express';
-import { PrismaProvider } from '@cauth/prisma';
-
-// 1. Setup Express and Prisma
-const app = express();
-const prisma = new PrismaClient();
-
-app.use(express.json());
-
-// 2. Initialize CAuth
-const auth = CAuth({
-  roles: ['USER', 'ADMIN'],
-  dbContractor: new PrismaProvider(prisma),
-  routeContractor: new ExpressContractor(),
-  jwtConfig: {
-    accessTokenSecret: process.env.ACCESS_TOKEN_SECRET || 'access-secret',
-    refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET || 'refresh-secret',
-    accessTokenLifeSpan: '15m',
-    refreshTokenLifeSpan: '7d',
-  },
-  otpConfig: {
-    expiresIn: 300000, // 5 mins
-    length: 6,
-  },
+// Register with Email
+await auth.FN.Register({
+  email: 'user@example.com',
+  password: 'SecurePassword123!',
+  role: 'USER'
 });
 
-// 3. Define Routes
-// Public Routes
-app.post('/auth/register', auth.Routes.Register());
-app.post('/auth/login', auth.Routes.Login());
-app.post('/auth/refresh', auth.Routes.Refresh());
-
-// Custom Login with OTP Route
-app.post('/auth/login-otp', async (req: Request, res: Response) => {
-    const result = await auth.FN.LoginWithOTP({ 
-        phoneNumber: req.body.phone, 
-        code: req.body.code 
-    });
-    res.send(result);
-});
-
-// Protected Routes
-app.post('/auth/logout', auth.Routes.Logout()); // Logout requires refresh token
-
-app.get('/profile', auth.Guard(), (req, res) => {
-    // Access user ID from req.cauth.id
-    res.json({ 
-        message: 'Profile accessed', 
-        userId: req.cauth?.id,
-        role: req.cauth?.role
-    });
-});
-
-// Role-Based Route
-app.get('/admin', Guard(['ADMIN']), (req, res) => {
-    res.json({ message: 'Admin dashboard' });
-});
-
-// Change Password (example of manual handler with Guard)
-app.post('/auth/change-password', auth.Guard(), (req, res) => {
-    // We need to pass the user ID to the ChangePassword route handler
-    // Note: This is a specific pattern for this route
-    auth.Routes.ChangePassword(req.cauth?.id!)(req, res);
-});
-
-
-// 4. Start Server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Register with Phone (E.164 format)
+await auth.FN.Register({
+  phoneNumber: '+27123456789',
+  password: 'SecurePassword123!',
+  role: 'ADMIN'
 });
 ```
+
+### Login Variations
+
+```typescript
+// Standard Password Login (Email)
+await auth.FN.Login({
+  email: 'user@example.com',
+  password: 'SecurePassword123!'
+});
+
+// Standard Password Login (Phone)
+await auth.FN.Login({
+  phoneNumber: '+27123456789',
+  password: 'SecurePassword123!'
+});
+```
+
+### OTP Lifecycle (Passwordless)
+
+1. **Request Code**:
+```typescript
+await auth.FN.RequestOTPCode({
+  email: 'user@example.com', // or phoneNumber
+  otpPurpose: 'LOGIN',       // or 'RESET_PASSWORD' | 'ACTION'
+  usePassword: false,        // If true, requires 'password' field for extra security
+  onCode: (code) => {
+    // Deliver this code via your Email/SMS provider
+    console.log(`Generated OTP: ${code}`);
+  }
+});
+```
+
+2. **Login with Code**:
+```typescript
+await auth.FN.LoginWithOTP({
+  email: 'user@example.com',
+  code: '123456'
+});
+```
+
+3. **Verify Code (Manual)**:
+```typescript
+await auth.FN.VerifyOTP({
+  id: 'user_uuid',
+  code: '123456',
+  otpPurpose: 'ACTION'
+});
+```
+
+### Session Management
+
+```typescript
+// Refresh Access Token
+await auth.FN.Refresh({ refreshToken: '...' });
+
+// Logout (Revokes specific refresh token)
+await auth.FN.Logout({ refreshToken: '...' });
+
+// Change Password
+await auth.FN.ChangePassword({
+  accountId: '...',
+  oldPassword: '...',
+  newPassword: '...'
+});
+```
+
+---
+
+## 🌐 Web Integration (Express)
+
+### Pre-built Routes
+
+Quickly mount standard authentication endpoints.
+
+```typescript
+app.post('/auth/register', auth.Routes.Register());
+app.post('/auth/login',    auth.Routes.Login());
+app.post('/auth/refresh',  auth.Routes.Refresh());
+app.post('/auth/logout',   auth.Routes.Logout());
+
+// Custom Change Password handler (needs userId injected via logic or URL)
+app.post('/auth/pw-reset', (req, res) => auth.Routes.ChangePassword(req.user.id)(req, res));
+```
+
+### Guard & RBAC
+
+Protect routes using the `Guard` middleware.
+
+```typescript
+// Anyone with a valid token
+app.get('/profile', auth.Guard(), (req, res) => {
+  const { id, role } = req.cauth; // Injected session data
+  res.json({ id, role });
+});
+
+// Restricted to specific roles
+app.get('/admin/stats', auth.Guard(['ADMIN', 'DEVELOPER']), (req, res) => {
+  res.send('Sensitive data');
+});
+```
+
+---
+
+## 🔑 Token Management (`auth.Tokens`)
+
+If you need to manually handle tokens:
+
+- `auth.Tokens.GenerateAccessToken(payload)`
+- `auth.Tokens.GenerateRefreshToken(payload)`
+- `auth.Tokens.GenerateTokenPairs(payload)`
+- `auth.Tokens.VerifyAccessToken(token)`
+- `auth.Tokens.VerifyRefreshToken(token)`
+
+---
+
+## 🛡️ Security Implementation Details
+
+### Hashing
+- **Passwords**: Hashed using **Argon2id** (m=65536, t=3, p=4).
+- **OTPs**: Stored as **Argon2id** hashes. The numeric code is never stored in plaintext.
+- **Refresh Tokens**: Stored as **HMAC-SHA256** signatures. If the database leaks, the tokens found cannot be used to authenticate.
+
+### Rotation & Expiry
+CAuth supports **Refresh Token Rotation**. When a refresh token is used, it is revoked and a new one can be issued (depending on contractor implementation).
+
+---
+
+## ❌ Error Mapping
+
+The Express contractor automatically maps core errors to HTTP codes:
+
+| Error | HTTP Status | Description |
+| :--- | :--- | :--- |
+| `CredentialMismatchError` | 401 | Invalid password or user not found. |
+| `InvalidDataError` | 400 | Zod validation failed for input. |
+| `DuplicateAccountError` | 409 | Email or Phone already exists. |
+| `InvalidOTPCode` | 422 | Wrong code or expired. |
+| `InvalidRoleError` | 403 | User lacks the required role for the Guard. |
+| `AccountNotFoundError` | 404 | The requested account ID does not exist. |
+
+---
+
+## 🌐 Express Deep-Dive
+
+### Manual Usage vs Pre-built Routes
+
+While `auth.Routes` handles the HTTP layer for you, you can use `auth.FN` directly for more control.
+
+```typescript
+// Using auth.Routes (Automatic)
+app.post('/auth/login', auth.Routes.Login());
+
+// Manual Integration (Full Control)
+app.post('/auth/login', async (req, res) => {
+  const result = await auth.FN.Login({
+    email: req.body.email,
+    password: req.body.password
+  });
+
+  if (!result.success) {
+    // result.errors contains FNError objects
+    return res.status(401).json({ errors: result.errors });
+  }
+
+  // result.value contains { accessToken, refreshToken, user }
+  res.cookie('token', result.value.accessToken, { httpOnly: true });
+  res.json(result.value);
+});
+```
+
+### Accessing Session Data
+
+The `Guard` middleware injects typed session data into `req.cauth`.
+
+```typescript
+// Setup global middleware for all routes below
+app.use('/api/v1', auth.Guard());
+
+app.get('/api/v1/user/settings', (req, res) => {
+  const userId = req.cauth.id;
+  const userRole = req.cauth.role;
+  // ... fetch settings for this user
+});
+```
+
+---
+
+## ⚠️ Advanced Error Handling
+
+CAuth provides helpers to identify specific error types programmatically.
+
+```typescript
+import { isCAuthError } from '@cauth/core';
+
+const result = await auth.FN.Login({...});
+
+if (!result.success) {
+  for (const err of result.errors) {
+    if (isCAuthError(err, 'CredentialMismatchError')) {
+      console.error('User provided the wrong password');
+    }
+    
+    if (isCAuthError(err, 'InvalidDataError')) {
+      console.error('Validation failed:', err.message);
+    }
+  }
+}
+```
+
+### Common Error Names
+Use these strings with `isCAuthError(err, 'NAME')`:
+- `CredentialMismatchError`
+- `InvalidDataError`
+- `AccountNotFoundError`
+- `InvalidRoleError`
+- `DuplicateAccountError`
+- `InvalidOTPCode`
+
+---
+
+## 🏗️ Custom Database Providers
+
+You can build your own `DatabaseContract` to support any persistence layer (MongoDB, Drizzle, etc.).
+
+```typescript
+import { DatabaseContract, AuthModel, CAuthOptions, OtpPurpose } from '@cauth/core';
+
+class MyCustomDB implements DatabaseContract {
+  async findAccountById({ id }) {
+    // Fetch from your DB
+    return { id, email: '...', passwordHash: '...', role: 'USER' };
+  }
+
+  async findAccountWithCredential({ email, phoneNumber }) {
+    // Find user by either email or phone
+  }
+
+  async createOTP({ config }, { id, purpose }) {
+    // 1. Generate numeric code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // 2. Hash it (Optional but recommended)
+    // 3. Save to DB with expiresAt
+    return { code, purpose, expiresAt: new Date(Date.now() + 300000) };
+  }
+
+  // ... implement other required methods
+}
+
+const auth = CAuth({
+  dbContractor: new MyCustomDB(),
+  // ... rest of config
+});
+```
+
+---
+
+## 🏛️ Type System Reference
+
+CAuth is built with deep type inference. Here are the key types you might interact with:
+
+### `AuthModel`
+The base structure of an account object returned from the DB.
+```typescript
+interface AuthModel {
+  id: string;
+  email?: string;
+  phoneNumber?: string;
+  role: string;
+  passwordHash?: string;
+}
+```
+
+### `Result<T>`
+The standard wrapper for all `FN` calls.
+```typescript
+type Result<T> = 
+  | { success: true; value: T; errors: null }
+  | { success: false; value: null; errors: FNError[] };
+```
+
+---
+
+## 🛡️ API Security & Use Cases
+
+### Password Reset Flow (OTP)
+
+1. **Step 1: Request Code**
+   The user enters their email. We generate a code and "send" it.
+   ```typescript
+   await auth.FN.RequestOTPCode({
+     email: 'user@example.com',
+     otpPurpose: 'RESET_PASSWORD',
+     onCode: (code) => sendEmail(email, `Your reset code is ${code}`)
+   });
+   ```
+
+2. **Step 2: Verify Code**
+   The user enters the code to "unlock" the password update.
+   ```typescript
+   const verification = await auth.FN.VerifyOTP({
+     id: accountId,
+     code: '123456',
+     otpPurpose: 'RESET_PASSWORD'
+   });
+   ```
+
+3. **Step 3: Update Password**
+   If `verification.success`, use `auth.FN.ChangePassword`.
+
+### Multi-Tenant Auth
+You can instantiate multiple `CAuth` clients for different parts of your application:
+```typescript
+const customerAuth = CAuth({ roles: ['USER'] as const, ... });
+const employeeAuth = CAuth({ roles: ['ADMIN', 'EDITOR'] as const, ... });
+```
+
+### Magic Links (OTP)
+Instead of a password, use `RequestOTPCode` with `otpPurpose: 'LOGIN'`. When the user enters the code, call `LoginWithOTP` which returns the session tokens.
