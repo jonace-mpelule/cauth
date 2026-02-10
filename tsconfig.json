@@ -17,7 +17,7 @@
 		"pretty": true,
 		"moduleResolution": "Node",
 		"allowImportingTsExtensions": true,
-		"verbatimModuleSyntax": true,
+		"verbatimModuleSyntax": false,
 		"noEmit": true,
 		"sourceMap": true,
 		"skipLibCheck": true,

@@ -1,4 +1,4 @@
-import argon2 from 'argon2';
+import argon2 from '@node-rs/argon2';
 import type { _CAuth } from '@/core/src/cauth.ts';
 import Strings from '@/core/src/helpers/strings.ts';
 import type { CAuthOptions } from '@/core/src/types/config.t.ts';
@@ -26,7 +26,7 @@ type AuthCodeResult = {
 
 export async function RequestAuthCode(
 	{ config }: AuthenticateDeps,
-	{...args}: RequestOTP & { onCode: (code: string) => any} ,
+	{ ...args }: RequestOTP & { onCode: (code: string) => any },
 ): Promise<Result<AuthCodeResult>> {
 	const out = LoginSchema.safeParse({
 		email: args.email,
@@ -49,11 +49,11 @@ export async function RequestAuthCode(
 	}
 
 	// Optional password check
-  if (args.usePassword) {
-    const passwordMatch = await argon2.verify(
-      String(args.password),
-      String(account?.passwordHash)
-    );
+	if (args.usePassword) {
+		const passwordMatch = await argon2.verify(
+			String(args.password),
+			String(account?.passwordHash)
+		);
 
 		if (!passwordMatch) {
 			return fail({ error: CAuthErrors.CredentialMismatchError });
@@ -68,7 +68,7 @@ export async function RequestAuthCode(
 			id: account.id,
 			purpose: args.otpPurpose,
 		},
-  );
+	);
 
 	args.onCode(otp.code);
 
@@ -129,8 +129,8 @@ export async function LoginWithCode(
 
 	await config.dbContractor.updateAccountLogin({
 		id: account.id,
-    refreshToken: tokenPair.refreshToken,
-    config
+		refreshToken: tokenPair.refreshToken,
+		config
 	});
 
 	delete account.passwordHash;

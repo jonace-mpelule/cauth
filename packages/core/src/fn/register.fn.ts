@@ -1,4 +1,4 @@
-import argon2 from 'argon2';
+import argon2, { Algorithm } from '@node-rs/argon2';
 import type { _CAuth } from '@/core/src/cauth.ts';
 import { CAuthErrors } from '@/core/src/errors/errors.ts';
 import type { CAuthOptions } from '@/core/src/types/config.t.ts';
@@ -55,7 +55,7 @@ export async function RegisterFn(
 	}
 
 	const passwordHash = await argon2.hash(String(args.password), {
-		type: argon2.argon2id
+		algorithm: Algorithm.Argon2i
 	})
 
 
@@ -72,12 +72,12 @@ export async function RegisterFn(
 	const tokenPair = await tokens.GenerateTokenPairs({
 		id: account.id,
 		role: account.role,
-  });
+	});
 
 	await config.dbContractor.updateAccountLogin({
 		id: account.id,
-    refreshToken: tokenPair.refreshToken,
-    config
+		refreshToken: tokenPair.refreshToken,
+		config
 	});
 
 	return ok({ account, tokens: tokenPair });

@@ -1,6 +1,6 @@
 {
   "name": "@cauth/express",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -32,12 +32,12 @@
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^24.7.0",
-    "argon2": "^0.44.0",
     "tsdown": "^0.15.6",
     "typescript": "^5.9.3"
   },
   "dependencies": {
     "express": "^5.1.0",
+    "@node-rs/argon2": "^2.0.2",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.23",
     "ms": "^2.1.3",
