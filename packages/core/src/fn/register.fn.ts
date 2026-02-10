@@ -1,4 +1,4 @@
-import argon2 from 'argon2-browser';
+import bcrypt from 'bcrypt';
 import type { _CAuth } from '@/core/src/cauth.ts';
 import { CAuthErrors } from '@/core/src/errors/errors.ts';
 import type { CAuthOptions } from '@/core/src/types/config.t.ts';
@@ -54,10 +54,7 @@ export async function RegisterFn(
 		});
 	}
 
-	const passwordHash = await argon2.hash({
-		pass: String(args.password),
-		salt: "salt123", type: argon2.ArgonType.Argon2d
-	})
+	const passwordHash = await bcrypt.hash(String(args.password), 10);
 
 
 	const account = await config.dbContractor.createAccount({

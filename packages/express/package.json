@@ -1,6 +1,6 @@
 {
   "name": "@cauth/express",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,9 +26,6 @@
   "author": "Jonace Mpelule <jonacempelule123@gmail.com> (https://github.com/jonace-mpelule)",
   "license": "MIT",
   "packageManager": "pnpm@10.13.1",
-  "peerDependencies": {
-    "argon2": "^0.44.0"
-  },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^24.7.0",
@@ -36,7 +33,6 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "argon2-browser": "^1.18.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.23",

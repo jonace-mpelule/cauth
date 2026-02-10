@@ -7,7 +7,7 @@ import {
 import { formatZodIssues } from '@/core/src/utils/zod-joined-issues.ts';
 import { CAuthErrors } from '../errors/errors.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
-import argon2 from "argon2-browser";
+import bcrypt from "bcrypt";
 
 
 type ChangePasswordDeps = {
@@ -38,10 +38,9 @@ export async function ChangePasswordFn(
 	}
 
 
-	const passwordMatch = await argon2.verify({
-		pass: String(args.oldPassword),
-		encoded: String(account.passwordHash)
-	},
+	const passwordMatch = await bcrypt.compare(
+		String(args.oldPassword),
+		String(account.passwordHash)
 	);
 
 	if (!passwordMatch) {
@@ -50,10 +49,7 @@ export async function ChangePasswordFn(
 		});
 	}
 
-	const newHash = await argon2.hash({
-		pass: args.newPassword,
-		salt: 'salt123'
-	})
+	const newHash = await bcrypt.hash(args.newPassword, 10);
 
 	await config.dbContractor.updateAccount({
 		id: account.id,
