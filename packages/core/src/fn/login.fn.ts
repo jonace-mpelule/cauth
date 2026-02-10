@@ -5,7 +5,7 @@ import type { Account, Tokens } from '../types/auth.t.ts';
 import { LoginSchema, type LoginSchemaType } from '../types/dto-schemas.t.ts';
 import { fail, ok, type Result } from '../types/result.t.ts';
 import { formatZodIssues } from '../utils/zod-joined-issues.ts';
-import argon2 from "@node-rs/argon2";
+import argon2 from "argon2-browser";
 
 type loginDeps = {
 	config: CAuthOptions;
@@ -41,8 +41,10 @@ export async function LoginFn(
 	}
 
 	const passwordMatch = await argon2.verify(
-		String(args.password),
-		String(account?.passwordHash),
+		{
+			pass: String(args.password),
+			encoded: String(account?.passwordHash),
+		}
 	);
 
 	if (!passwordMatch) {

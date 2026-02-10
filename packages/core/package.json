@@ -1,6 +1,6 @@
 {
   "name": "@cauth/core",
-  "version": "0.1.0",
+  "version": "0.2.3",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,13 +27,14 @@
   "license": "MIT",
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
+    "@types/argon2-browser": "^1.18.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/ms": "^2.1.0",
     "tsdown": "^0.15.6",
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@node-rs/argon2": "^2.0.2",
+    "argon2-browser": "^1.18.0",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.23",
     "ms": "^2.1.3",

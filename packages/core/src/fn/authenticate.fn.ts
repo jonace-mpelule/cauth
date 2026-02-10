@@ -1,4 +1,4 @@
-import argon2 from '@node-rs/argon2';
+import argon2 from 'argon2-browser';
 import type { _CAuth } from '@/core/src/cauth.ts';
 import Strings from '@/core/src/helpers/strings.ts';
 import type { CAuthOptions } from '@/core/src/types/config.t.ts';
@@ -50,10 +50,9 @@ export async function RequestAuthCode(
 
 	// Optional password check
 	if (args.usePassword) {
-		const passwordMatch = await argon2.verify(
-			String(args.password),
-			String(account?.passwordHash)
-		);
+		const passwordMatch = await argon2.verify({
+			pass: String(args.password), encoded: String(account.passwordHash),
+		});
 
 		if (!passwordMatch) {
 			return fail({ error: CAuthErrors.CredentialMismatchError });
